@@ -1,0 +1,18 @@
+{
+  "name": "nrk-tv-oversetter",
+  "version": "0.1.0",
+  "description": "NRK TV subtitle translator extension",
+  "scripts": {
+    "build": "tsc && npm run copy-assets && npm run bundle-content",
+    "copy-assets": "node scripts/copy-assets.js",
+    "bundle-content": "node scripts/bundle-content-script.js",
+    "watch": "tsc --watch",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "typescript": "^5.3.3",
+    "rimraf": "^5.0.5"
+  },
+  "dependencies": {}
+}

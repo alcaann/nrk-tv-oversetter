@@ -1,0 +1,323 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f0f0f0;
+  padding: 20px;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.header {
+  background: linear-gradient(135deg, #007acc 0%, #005a9e 100%);
+  color: white;
+  padding: 30px;
+  border-radius: 8px 8px 0 0;
+}
+
+h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.content {
+  padding: 30px;
+}
+
+.section {
+  margin-bottom: 30px;
+}
+
+.section-title {
+  font-size: 18px;
+  color: #333;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #007acc;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.description {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+}
+
+input[type="number"],
+select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.radio-group {
+  display: flex;
+  gap: 20px;
+  margin-top: 8px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.save-button {
+  background: #007acc;
+  color: white;
+  padding: 12px 30px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.save-button:hover {
+  background: #005a9e;
+}
+
+.save-button:active {
+  transform: scale(0.98);
+}
+
+.save-status {
+  display: inline-block;
+  margin-left: 15px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.save-status.show {
+  opacity: 1;
+}
+
+.save-status.success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.info-box {
+  background: #e7f3ff;
+  border-left: 4px solid #007acc;
+  padding: 15px;
+  margin-top: 20px;
+  border-radius: 4px;
+}
+
+.info-box h3 {
+  font-size: 14px;
+  color: #007acc;
+  margin-bottom: 8px;
+}
+
+.info-box p {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.6;
+}
+
+.footer {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-size: 12px;
+  border-top: 1px solid #eee;
+}
+
+/* Log Viewer Styles */
+.log-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.log-button {
+  background: #007acc;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.log-button:hover {
+  background: #005a9e;
+}
+
+.log-button.paused {
+  background: #ffc107;
+  color: #000;
+}
+
+.log-status {
+  font-size: 13px;
+  color: #666;
+  margin-left: auto;
+}
+
+.log-viewer {
+  background: #1e1e1e;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  height: 400px;
+  overflow-y: auto;
+  padding: 12px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+}
+
+.log-empty {
+  color: #888;
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+}
+
+.log-entry {
+  margin-bottom: 12px;
+  padding: 8px;
+  border-left: 3px solid #007acc;
+  background: #2d2d2d;
+  border-radius: 3px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.log-entry.detected {
+  border-left-color: #4caf50;
+}
+
+.log-entry.translated {
+  border-left-color: #2196f3;
+}
+
+.log-entry.error {
+  border-left-color: #f44336;
+}
+
+.log-time {
+  color: #888;
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.log-type {
+  color: #fff;
+  font-weight: bold;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.log-type.detected {
+  color: #4caf50;
+}
+
+.log-type.translated {
+  color: #2196f3;
+}
+
+.log-type.error {
+  color: #f44336;
+}
+
+.log-text {
+  color: #e0e0e0;
+  margin-bottom: 4px;
+}
+
+.log-original {
+  color: #ffd700;
+}
+
+.log-translated {
+  color: #87ceeb;
+}
+
+.log-error {
+  color: #ff6b6b;
+  font-style: italic;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Scrollbar styling for log viewer */
+.log-viewer::-webkit-scrollbar {
+  width: 8px;
+}
+
+.log-viewer::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.log-viewer::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+.log-viewer::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}

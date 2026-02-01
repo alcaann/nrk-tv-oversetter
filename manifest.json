@@ -1,0 +1,57 @@
+{
+  "manifest_version": 3,
+  "name": "NRK TV Oversetter",
+  "version": "0.1.0",
+  "description": "Translate Norwegian subtitles on NRK TV to English (or other languages) in real-time",
+
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab"
+  ],
+
+  "host_permissions": [
+    "*://*.nrk.no/*"
+  ],
+
+  "background": {
+    "service_worker": "dist/background/service-worker.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["*://tv.nrk.no/*"],
+      "js": ["dist/content/subtitle-injector.bundle.js"],
+      "css": ["dist/content/subtitle-styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "action": {
+    "default_popup": "dist/ui/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+
+  "options_ui": {
+    "page": "dist/ui/options.html",
+    "open_in_tab": true
+  },
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": ["dist/content/*"],
+      "matches": ["*://*.nrk.no/*"]
+    }
+  ]
+}

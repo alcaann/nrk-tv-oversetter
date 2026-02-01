@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NRK TV Oversetter - Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>NRK TV Oversetter Settings</h1>
+      <div class="subtitle">Configure your subtitle translation preferences</div>
+    </div>
+
+    <div class="content">
+      <div class="section">
+        <h2 class="section-title">Language Settings</h2>
+
+        <div class="form-group">
+          <label for="source-language">Source Language</label>
+          <select id="source-language">
+            <option value="no">Norwegian (Norsk)</option>
+          </select>
+          <div class="description">The language of NRK TV subtitles</div>
+        </div>
+
+        <div class="form-group">
+          <label for="target-language">Target Language</label>
+          <select id="target-language">
+            <option value="en">English</option>
+            <option value="es">Spanish (Español)</option>
+            <option value="fr">French (Français)</option>
+            <option value="de">German (Deutsch)</option>
+            <option value="it">Italian (Italiano)</option>
+            <option value="pt">Portuguese (Português)</option>
+            <option value="ru">Russian (Русский)</option>
+            <option value="ja">Japanese (日本語)</option>
+            <option value="zh">Chinese (中文)</option>
+          </select>
+          <div class="description">The language you want subtitles translated to</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Translation Engine</h2>
+
+        <div class="form-group">
+          <label for="translation-engine">Engine</label>
+          <select id="translation-engine">
+            <option value="edge">Built-in Browser Translation</option>
+            <option value="google" disabled>Google Translate (Coming Soon)</option>
+            <option value="deepl" disabled>DeepL (Coming Soon)</option>
+          </select>
+          <div class="description">Choose the translation service to use</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Display Settings</h2>
+
+        <div class="form-group">
+          <label>Translation Position</label>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="position-below" name="position" value="below">
+              <label for="position-below">Below original</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="position-above" name="position" value="above">
+              <label for="position-above">Above original</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="font-size">Font Size (px)</label>
+          <input type="number" id="font-size" min="10" max="32" value="16">
+          <div class="description">Size of the translated subtitle text</div>
+        </div>
+
+        <div class="form-group">
+          <div class="checkbox-option">
+            <input type="checkbox" id="show-original">
+            <label for="show-original">Show original subtitle alongside translation</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <button class="save-button" id="save-button">Save Settings</button>
+        <span class="save-status" id="save-status">Settings saved!</span>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Real-Time Subtitle Log</h2>
+        <div class="description" style="margin-bottom: 12px;">
+          Live feed of detected subtitles from NRK TV. Open this page alongside NRK TV to see subtitles in real-time.
+        </div>
+
+        <div class="log-controls">
+          <button class="log-button" id="clear-log">Clear Log</button>
+          <button class="log-button" id="pause-log">Pause</button>
+          <span class="log-status" id="log-status">Waiting for subtitles...</span>
+        </div>
+
+        <div class="log-viewer" id="log-viewer">
+          <div class="log-empty">
+            No subtitles detected yet. Make sure you're playing a video on NRK TV with subtitles enabled.
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <h3>About Built-in Browser Translation</h3>
+        <p>
+          This extension uses the built-in Translator API available in Chromium-based browsers
+          (Google Chrome and Microsoft Edge). The API works offline after downloading the translation
+          models. If the extension doesn't work, make sure you're using a recent version of Chrome or Edge.
+        </p>
+      </div>
+    </div>
+
+    <div class="footer">
+      NRK TV Oversetter v0.1.0 | Made for translating Norwegian subtitles
+    </div>
+  </div>
+
+  <script src="options.js" type="module"></script>
+</body>
+</html>
