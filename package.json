@@ -1,6 +1,6 @@
 {
   "name": "nrk-tv-oversetter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "NRK TV subtitle translator extension",
   "scripts": {
     "build": "tsc && npm run copy-assets && npm run bundle-content",

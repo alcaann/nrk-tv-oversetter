@@ -204,7 +204,7 @@ Runs: `tsc && npm run copy-assets && npm run bundle-content`
 
 **Key fields**:
 - `manifest_version`: 3
-- `permissions`: `["storage", "scripting", "activeTab"]`
+- `permissions`: `["storage", "activeTab"]`
 - `host_permissions`: `["*://*.nrk.no/*"]`
 - `content_scripts`: Injects bundled script on `tv.nrk.no`
 - `background.service_worker`: Minimal background worker
@@ -319,7 +319,6 @@ See [CAPTION_DETECTOR.md](CAPTION_DETECTOR.md) "Common Issues & Solutions" secti
 
 ### Permissions
 - `storage`: Settings persistence
-- `scripting`: Content script injection (unused currently, legacy permission)
 - `activeTab`: Access NRK TV tabs
 - `host_permissions`: Only `*.nrk.no/*`
 

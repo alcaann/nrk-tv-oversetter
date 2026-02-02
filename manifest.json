@@ -1,12 +1,11 @@
 {
   "manifest_version": 3,
   "name": "NRK TV Oversetter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Translate Norwegian subtitles on NRK TV to English (or other languages) in real-time",
 
   "permissions": [
     "storage",
-    "scripting",
     "activeTab"
   ],
 
