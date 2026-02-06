@@ -49,7 +49,6 @@ The extension uses Chrome's built-in Translator API for translation services. Tr
 The extension requires the following permissions:
 
 - **storage**: To save your preferences (language, font size, position) locally on your device
-- **activeTab**: To check if the current tab is an NRK TV page
 - **host permission (*.nrk.no/*)**: To access subtitle elements on NRK TV pages for translation
 
 ## Data Retention
