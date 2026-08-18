@@ -1,7 +1,26 @@
 {
   "name": "nrk-tv-oversetter",
-  "version": "0.1.1",
-  "description": "NRK TV subtitle translator extension",
+  "version": "0.1.2",
+  "description": "Browser extension that translates Norwegian subtitles on NRK TV in real-time using the browser's built-in on-device Translator API",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alcaann/nrk-tv-oversetter.git"
+  },
+  "homepage": "https://github.com/alcaann/nrk-tv-oversetter#readme",
+  "bugs": {
+    "url": "https://github.com/alcaann/nrk-tv-oversetter/issues"
+  },
+  "author": "alcaann",
+  "license": "MIT",
+  "keywords": [
+    "chrome-extension",
+    "edge-extension",
+    "nrk",
+    "subtitles",
+    "translation",
+    "translator-api",
+    "norwegian"
+  ],
   "scripts": {
     "build": "tsc && npm run copy-assets && npm run bundle-content",
     "copy-assets": "node scripts/copy-assets.js",

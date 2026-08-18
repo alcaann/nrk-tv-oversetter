@@ -1,0 +1,49 @@
+name: Bug report
+description: Something is not working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. A few details make this much faster to fix.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Chrome
+        - Microsoft Edge
+        - Other Chromium-based browser
+    validations:
+      required: true
+
+  - type: input
+    id: browser-version
+    attributes:
+      label: Browser version
+      description: "From `chrome://version` or `edge://settings/help`. Edge must be 148 or later."
+      placeholder: "e.g. 148.0.3296.62"
+    validations:
+      required: true
+
+  - type: input
+    id: target-language
+    attributes:
+      label: Target language
+      placeholder: "e.g. English"
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: "Press F12 on the NRK TV page, open the Console tab, and paste anything that looks relevant. Lines starting with [TranslatorEngine] or [SubtitleProcessor] are especially useful."
+      render: shell

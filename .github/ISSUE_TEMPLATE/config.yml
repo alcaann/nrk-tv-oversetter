@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Chrome Web Store listing
+    url: https://chromewebstore.google.com/detail/nrk-tv-oversetter/hlnikafacjiekphhloakkbhokhfkpcem
+    about: Install the extension, or leave a store review.
+  - name: How subtitle detection works
+    url: https://github.com/alcaann/nrk-tv-oversetter/blob/main/docs/CAPTION_DETECTOR.md
+    about: Read this before reporting detection problems — you may be able to fix it yourself.

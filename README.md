@@ -1,90 +1,127 @@
 # NRK TV Oversetter
 
-Browser extension that translates Norwegian subtitles on NRK TV in real-time using Chrome/Edge's built-in Translator API.
+Translate Norwegian subtitles on [NRK TV](https://tv.nrk.no) in real-time, using the translation model built into your browser. Nothing you watch leaves your device.
 
-## Browser Support
+[![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/nrk-tv-oversetter/hlnikafacjiekphhloakkbhokhfkpcem)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**✅ Chrome Stable** | **✅ Edge Canary** | **❌ Edge Stable** (Translator API not available)
+![Norwegian subtitles with English translation shown below them on NRK TV](docs/assets/dual-subtitles.jpg)
+
+## Install
+
+| Browser | Status |
+| --- | --- |
+| **Chrome** | [Chrome Web Store](https://chromewebstore.google.com/detail/nrk-tv-oversetter/hlnikafacjiekphhloakkbhokhfkpcem) |
+| **Edge** | Coming soon — Edge Add-ons submission pending |
+
+## Browser support
+
+Translation runs on the browser's built-in [Translator API](https://developer.chrome.com/docs/ai/translator-api), so support depends on your browser version:
+
+| Browser | Minimum version | Languages available to the API |
+| --- | --- | --- |
+| Chrome | Stable | 44 |
+| Microsoft Edge | **148+** | 145+ |
+
+Edge shipped the Translator API to **stable in Edge 148**. Earlier Edge versions required Canary; that is no longer the case. If you are on Edge, update to 148 or later.
 
 ## Features
 
-- Real-time Norwegian subtitle translation
-- Multiple target languages (English, Spanish, French, German, Italian, Portuguese, Russian, Japanese, Chinese)
-- Customizable display (font size, position)
-- Offline translation after model download
-- Live subtitle log viewer
+- Real-time translation of Norwegian subtitles as you watch
+- Original and translated subtitles shown together
+- Configurable font size and placement (above or below the original)
+- Works offline once the language model has downloaded
+- Live subtitle log for debugging detection issues
 
-## Quick Start
+> **Note on languages:** the extension currently offers 9 target languages, while the underlying API supports far more (44 on Chrome, 145+ on Edge). Expanding this to the browser's full list is the main item on the [roadmap](#roadmap) — see [#issues](https://github.com/alcaann/nrk-tv-oversetter/issues) if the language you need is missing.
 
-```bash
-# Build
-npm install
-npm run build
-
-# Load in browser
-# Chrome: chrome://extensions → Enable Developer mode → Load unpacked
-# Edge Canary: edge://extensions → Enable Developer mode → Load unpacked
-```
+![Extension settings page](docs/assets/settings-page.png)
 
 ## Usage
 
-1. Open [NRK TV](https://tv.nrk.no)
-2. Click extension icon → Download translation model (first time only)
-3. Enable extension and play video with subtitles
-4. Translations appear below Norwegian subtitles in yellow
+1. Open [tv.nrk.no](https://tv.nrk.no) and start a video with Norwegian subtitles enabled
+2. Click the extension icon, then **Download Translation Model** (first run only)
+3. Translations appear below the Norwegian subtitles in yellow
 
-**Settings**: Right-click extension → Options
+Settings: right-click the extension icon → **Options**.
 
-## How It Works
+## Roadmap
 
-Uses **dual detection** for reliable subtitle capture on NRK TV:
+- [ ] Populate the language list dynamically from the browser's Translator API, so every language the browser supports is offered (fixes missing languages such as Arabic)
+- [ ] Download progress indicator via the API's `monitor` option
+- [ ] Model status readable from the options page without an open NRK tab
+- [ ] Injector health check, to detect and report when NRK changes their page structure
+- [ ] Edge Add-ons release
 
-- **MutationObserver**: Watches DOM changes in subtitle container
-- **Polling (500ms)**: Catches updates missed by observer (NRK uses Lit framework)
-- **Primary selector**: `span[class*="subtitle"]`
-- **Translation**: Chrome/Edge built-in Translator API (offline after model download)
+## Contributing
 
-**If NRK changes their site**, update selectors in [SubtitleProcessor.ts:131](src/content/SubtitleProcessor.ts)
+Contributions are welcome — this is a small project and pull requests are genuinely appreciated.
 
-See [docs/CAPTION_DETECTOR.md](docs/CAPTION_DETECTOR.md) for detection details.
+- **Found a bug, or missing a language?** [Open an issue](https://github.com/alcaann/nrk-tv-oversetter/issues/new/choose). Bug reports through the extension store are hard to reply to; GitHub issues let us actually talk it through.
+- **Want to fix something?** Fork, branch, and open a pull request. See [CONTRIBUTING.md](CONTRIBUTING.md) for the build and test loop.
+- **Subtitles stopped being detected?** NRK changes their site occasionally. That's usually a one-line selector fix — see [docs/CAPTION_DETECTOR.md](docs/CAPTION_DETECTOR.md).
 
 ## Development
 
-**Commands:**
 ```bash
-npm run build          # Full build (TypeScript + assets + bundling)
-npm run clean          # Remove dist/
-npm run copy-assets    # Copy HTML/CSS to dist/
-npm run bundle-content # Bundle content script
+npm install
+npm run build
 ```
 
-**Architecture** ([full docs](docs/ARCHITECTURE.md)):
-- `src/content/SubtitleProcessor.ts` - Subtitle detection & processing
-- `src/core/translation/` - Translation engines (factory pattern)
-- `src/ui/` - Popup & options pages
-- `src/core/interfaces/` - TypeScript interfaces for extensibility
+Then load the unpacked extension: `chrome://extensions` (or `edge://extensions`) → enable **Developer mode** → **Load unpacked** → select the repo root.
 
-**Add new translation engine:**
-1. Implement `ITranslationEngine` interface
-2. Register in `TranslationEngineFactory.ts`
-3. Add to UI dropdowns
+**Commands:**
+
+| Command | Purpose |
+| --- | --- |
+| `npm run build` | Full build (TypeScript + assets + bundling) |
+| `npm run watch` | TypeScript in watch mode |
+| `npm run clean` | Remove `dist/` |
+| `npm run copy-assets` | Copy HTML/CSS into `dist/` |
+| `npm run bundle-content` | Bundle the content script |
+
+**Architecture** ([full docs](docs/ARCHITECTURE.md)):
+
+| Path | Responsibility |
+| --- | --- |
+| [src/content/SubtitleProcessor.ts](src/content/SubtitleProcessor.ts) | Subtitle detection and processing |
+| [src/core/translation/](src/core/translation/) | Translation engines (factory pattern) |
+| [src/core/interfaces/](src/core/interfaces/) | Interfaces for extensibility |
+| [src/ui/](src/ui/) | Popup and options pages |
+
+**Adding a translation engine:** implement [ITranslationEngine](src/core/interfaces/ITranslationEngine.ts), register it in [TranslationEngineFactory.ts](src/core/translation/TranslationEngineFactory.ts), add it to the UI dropdowns.
+
+## How it works
+
+NRK builds their player with Lit, which updates subtitle text in ways a `MutationObserver` alone can miss. Detection therefore uses two mechanisms together:
+
+- **MutationObserver** on the subtitle container, for DOM changes
+- **500 ms polling** as a fallback, for text updates that fire no mutation
+
+The primary selector is `span[class*="subtitle"]`, with fallbacks. Translation then goes through the browser's built-in Translator API, which runs entirely on-device.
+
+See [docs/CAPTION_DETECTOR.md](docs/CAPTION_DETECTOR.md) for detection details.
 
 ## Troubleshooting
 
-**No translations?**
-- Verify you're using Chrome Stable or Edge Canary (NOT Edge Stable)
-- Download translation model via popup first
-- Refresh NRK TV page after enabling extension
+**No translations appearing?**
+- On Edge, confirm you are on version 148 or later (`edge://settings/help`)
+- Download the translation model from the popup first
+- Refresh the NRK TV page after enabling the extension
 
-**Model download stuck?**
-- Edge Stable will never work - use Chrome or Edge Canary
-- Check browser console (F12) for errors
+**Model download stuck or failing?**
+- Restart the browser and try again — this is a known quirk of the built-in model download
+- Check the browser console (F12) for errors
 
-**Subtitle detection broken?**
+**Subtitles not being detected?**
 - NRK may have changed their HTML structure
-- Update selectors in `SubtitleProcessor.ts` (~line 131)
-- See [CAPTION_DETECTOR.md](docs/CAPTION_DETECTOR.md) for guide
+- [Open an issue](https://github.com/alcaann/nrk-tv-oversetter/issues/new/choose) — include the video you were watching
+- To fix it yourself, update the selectors in [SubtitleProcessor.ts](src/content/SubtitleProcessor.ts#L129-L152)
+
+## Privacy
+
+Subtitles are translated on your device by the browser's built-in model. No subtitle text, browsing history, or personal data is transmitted anywhere. See [PRIVACY.md](PRIVACY.md).
 
 ## License
 
-MIT
+[MIT](LICENSE)

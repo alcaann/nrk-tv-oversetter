@@ -1,0 +1,48 @@
+name: Subtitles not detected
+description: The extension is on, but no translation appears at all
+labels: ["bug", "site-compatibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This usually means NRK changed their page structure and the extension's
+        selectors no longer match. It is normally a small fix, but we need to see
+        the new markup to make it.
+
+  - type: input
+    id: video-url
+    attributes:
+      label: Video URL
+      description: The tv.nrk.no page you were watching.
+      placeholder: "https://tv.nrk.no/serie/..."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Quick checks
+      options:
+        - label: Norwegian subtitles are visible in the player itself
+          required: true
+        - label: The extension is enabled in the popup
+          required: true
+        - label: I refreshed the page after enabling it
+          required: true
+
+  - type: textarea
+    id: subtitle-markup
+    attributes:
+      label: Subtitle element markup
+      description: |
+        If you can: right-click a Norwegian subtitle → Inspect → right-click the
+        highlighted element → Copy → Copy outerHTML, and paste it here. This is the
+        single most useful thing for fixing detection.
+      render: html
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: "Press F12, open Console. Look for a repeating 'Waiting for video with subtitles...' message — that confirms detection is the problem."
+      render: shell

@@ -32,3 +32,6 @@ yarn-error.log*
 # Temporary files
 *.tmp
 .cache/
+
+# Store-listing screenshot masters (optimized copies live in docs/assets/)
+Screenshot_*.png

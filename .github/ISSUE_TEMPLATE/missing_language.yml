@@ -1,0 +1,31 @@
+name: Missing language
+description: A language you need is not in the dropdown
+labels: ["enhancement", "language"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The language list is currently hardcoded and shorter than what browsers actually
+        support (44 languages on Chrome, 145+ on Edge). Making it dynamic is on the
+        roadmap — but please still file this, so the language gets prioritised and so
+        we know someone is waiting on it.
+
+  - type: input
+    id: language
+    attributes:
+      label: Which language?
+      placeholder: "e.g. Arabic"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Which browser do you use?
+      description: This determines whether the browser can already do it today.
+      options:
+        - Chrome
+        - Microsoft Edge
+        - Other Chromium-based browser
+    validations:
+      required: true
