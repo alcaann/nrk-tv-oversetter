@@ -1,5 +1,6 @@
 import { StorageService } from '../utils/StorageService.js';
 import { ExtensionSettings } from '../core/interfaces/IStorageService.js';
+import { getSupportedLanguages, populateLanguageSelect } from '../core/languages.js';
 
 /**
  * Options page controller
@@ -13,6 +14,12 @@ const targetLanguage = document.getElementById('target-language') as HTMLSelectE
 const translationEngine = document.getElementById('translation-engine') as HTMLSelectElement;
 const positionBelow = document.getElementById('position-below') as HTMLInputElement;
 const positionAbove = document.getElementById('position-above') as HTMLInputElement;
+const fontModeRelative = document.getElementById('font-mode-relative') as HTMLInputElement;
+const fontModeAbsolute = document.getElementById('font-mode-absolute') as HTMLInputElement;
+const fontScale = document.getElementById('font-scale') as HTMLInputElement;
+const fontScaleValue = document.getElementById('font-scale-value') as HTMLSpanElement;
+const fontScaleGroup = document.getElementById('font-scale-group') as HTMLDivElement;
+const fontSizeGroup = document.getElementById('font-size-group') as HTMLDivElement;
 const fontSize = document.getElementById('font-size') as HTMLInputElement;
 const showOriginal = document.getElementById('show-original') as HTMLInputElement;
 const saveButton = document.getElementById('save-button') as HTMLButtonElement;
@@ -23,9 +30,26 @@ async function loadSettings() {
   const settings = await storage.getAll();
 
   sourceLanguage.value = settings.sourceLanguage;
-  targetLanguage.value = settings.targetLanguage;
+
+  // Read from the browser rather than hardcoded, so the list matches what it supports
+  const languages = await getSupportedLanguages(settings.sourceLanguage);
+  populateLanguageSelect(targetLanguage, languages, settings.targetLanguage);
+
+  const description = document.getElementById('target-language-description');
+  if (description) {
+    description.textContent =
+      `The language you want subtitles translated to - ${languages.length} available in this browser`;
+  }
   translationEngine.value = settings.translationEngine;
   fontSize.value = settings.fontSize.toString();
+  fontScale.value = settings.fontSizeScale.toString();
+
+  if (settings.fontSizeMode === 'absolute') {
+    fontModeAbsolute.checked = true;
+  } else {
+    fontModeRelative.checked = true;
+  }
+  updateFontModeVisibility();
   showOriginal.checked = settings.showOriginal;
 
   if (settings.position === 'below') {
@@ -45,6 +69,8 @@ async function saveSettings() {
     targetLanguage: targetLanguage.value,
     translationEngine: translationEngine.value as any,
     position: position as any,
+    fontSizeMode: fontModeAbsolute.checked ? 'absolute' : 'relative',
+    fontSizeScale: parseFloat(fontScale.value),
     fontSize: parseInt(fontSize.value),
     showOriginal: showOriginal.checked
   };
@@ -62,11 +88,29 @@ async function saveSettings() {
   }, 2000);
 }
 
+/**
+ * Only one of the two size controls is meaningful at a time, so hide the other.
+ */
+function updateFontModeVisibility() {
+  const isAbsolute = fontModeAbsolute.checked;
+  fontSizeGroup.style.display = isAbsolute ? '' : 'none';
+  fontScaleGroup.style.display = isAbsolute ? 'none' : '';
+  fontScaleValue.textContent = `${Math.round(parseFloat(fontScale.value) * 100)}%`;
+}
+
 // Event listeners
 saveButton.addEventListener('click', saveSettings);
 
+[fontModeRelative, fontModeAbsolute].forEach((radio) => {
+  radio.addEventListener('change', updateFontModeVisibility);
+});
+
+fontScale.addEventListener('input', () => {
+  fontScaleValue.textContent = `${Math.round(parseFloat(fontScale.value) * 100)}%`;
+});
+
 // Auto-save on change (optional - can be removed if you prefer manual save only)
-[sourceLanguage, targetLanguage, translationEngine, positionBelow, positionAbove, fontSize, showOriginal].forEach(element => {
+[sourceLanguage, targetLanguage, translationEngine, positionBelow, positionAbove, fontSize, fontScale, fontModeRelative, fontModeAbsolute, showOriginal].forEach(element => {
   element.addEventListener('change', () => {
     // Optional: Enable auto-save
     // saveSettings();

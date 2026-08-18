@@ -1,6 +1,6 @@
 {
   "name": "nrk-tv-oversetter",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Browser extension that translates Norwegian subtitles on NRK TV in real-time using the browser's built-in on-device Translator API",
   "repository": {
     "type": "git",

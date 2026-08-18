@@ -28,12 +28,14 @@ Edge shipped the Translator API to **stable in Edge 148**. Earlier Edge versions
 ## Features
 
 - Real-time translation of Norwegian subtitles as you watch
-- Original and translated subtitles shown together
-- Configurable font size and placement (above or below the original)
+- **Every language your browser supports** — the list is read from the browser at runtime, so it is around 39 on Chrome and 145+ on Edge 148, rather than a fixed list that goes stale
+- Optionally hide the Norwegian original and show only the translation
+- Translation size that scales with NRK's own subtitles, so it stays in proportion in fullscreen and on small windows — or a fixed pixel size if you prefer
+- Models download automatically, with live progress in the popup
 - Works offline once the language model has downloaded
 - Live subtitle log for debugging detection issues
 
-> **Note on languages:** the extension currently offers 9 target languages, while the underlying API supports far more (44 on Chrome, 145+ on Edge). Expanding this to the browser's full list is the main item on the [roadmap](#roadmap) — see [#issues](https://github.com/alcaann/nrk-tv-oversetter/issues) if the language you need is missing.
+> **Missing a language?** The list comes from your browser, so if something is absent your browser cannot translate into it yet. Edge 148+ supports considerably more than Chrome. [Open an issue](https://github.com/alcaann/nrk-tv-oversetter/issues/new/choose) if something looks wrong.
 
 ![Extension settings page](docs/assets/settings-page.png)
 
@@ -47,9 +49,9 @@ Settings: right-click the extension icon → **Options**.
 
 ## Roadmap
 
-- [ ] Populate the language list dynamically from the browser's Translator API, so every language the browser supports is offered (fixes missing languages such as Arabic)
-- [ ] Download progress indicator via the API's `monitor` option
-- [ ] Model status readable from the options page without an open NRK tab
+- [x] Populate the language list dynamically from the browser's Translator API (fixes missing languages such as Arabic)
+- [x] Download progress, shown live in the popup
+- [x] Model status readable without an open NRK tab
 - [ ] Injector health check, to detect and report when NRK changes their page structure
 - [ ] Edge Add-ons release
 

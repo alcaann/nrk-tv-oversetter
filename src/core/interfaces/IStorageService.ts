@@ -29,6 +29,11 @@ export interface ExtensionSettings {
   sourceLanguage: string;
   translationEngine: 'edge' | 'google' | 'deepl' | 'custom';
   showOriginal: boolean;
+  /** 'relative' scales with NRK's own subtitle size; 'absolute' uses a fixed pixel value */
+  fontSizeMode: 'relative' | 'absolute';
+  /** Multiplier applied to NRK's computed subtitle size when fontSizeMode is 'relative' */
+  fontSizeScale: number;
+  /** Fixed size in pixels, used when fontSizeMode is 'absolute' */
   fontSize: number;
   position: 'below' | 'above' | 'overlay';
 }
@@ -39,6 +44,8 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   sourceLanguage: 'no',
   translationEngine: 'edge',
   showOriginal: true,
+  fontSizeMode: 'relative',
+  fontSizeScale: 0.75,
   fontSize: 16,
   position: 'below'
 };

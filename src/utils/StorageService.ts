@@ -26,7 +26,20 @@ export class StorageService implements IStorageService {
   async getAll(): Promise<ExtensionSettings> {
     try {
       const result = await chrome.storage.sync.get(null);
-      return { ...DEFAULT_SETTINGS, ...result };
+      const settings: ExtensionSettings = { ...DEFAULT_SETTINGS, ...result };
+
+      // Installs from before fontSizeMode existed only stored a pixel value. If that
+      // user had changed it from the default, they chose that size deliberately, so
+      // keep them on a fixed size instead of silently switching them to relative.
+      if (
+        result.fontSizeMode === undefined &&
+        typeof result.fontSize === 'number' &&
+        result.fontSize !== DEFAULT_SETTINGS.fontSize
+      ) {
+        settings.fontSizeMode = 'absolute';
+      }
+
+      return settings;
     } catch (error) {
       console.error('[StorageService] Error getting all settings:', error);
       return DEFAULT_SETTINGS;

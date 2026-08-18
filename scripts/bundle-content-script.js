@@ -14,6 +14,8 @@ const files = [
   'core/interfaces/IStorageService.js',
   'core/interfaces/ISubtitleProcessor.js',
   'core/interfaces/ITranslationEngine.js',
+  "core/modelStatus.js",
+  "core/languages.js",
   'core/translation/TranslatorEngine.js',
   'core/translation/TranslationEngineFactory.js',
   'utils/StorageService.js',

@@ -8,6 +8,26 @@ import { ExtensionSettings } from '../core/interfaces/IStorageService.js';
 /**
  * Processes NRK TV subtitles and adds translations
  */
+/**
+ * Marks a subtitle element we hid for showOriginal, holding its previous inline
+ * display value. Kept in the DOM rather than in instance state so that ANY
+ * processor can restore it - a processor that gets orphaned by rapid settings
+ * changes would otherwise leave the page permanently without subtitles.
+ */
+const HIDDEN_ORIGINAL_ATTR = 'data-nrk-oversetter-hidden';
+
+/** Interactions that grant the transient activation Chrome needs to download a model */
+const GESTURE_EVENTS: string[] = ['pointerdown', 'keydown'];
+
+/** Restore every original this extension hid, whoever hid it. */
+function restoreAllHiddenOriginals(): void {
+  document.querySelectorAll(`[${HIDDEN_ORIGINAL_ATTR}]`).forEach((el) => {
+    const element = el as HTMLElement;
+    element.style.display = element.getAttribute(HIDDEN_ORIGINAL_ATTR) || '';
+    element.removeAttribute(HIDDEN_ORIGINAL_ATTR);
+  });
+}
+
 export class SubtitleProcessor implements ISubtitleProcessor {
   private observer: MutationObserver | null = null;
   private processedSubtitles: Set<string> = new Set();
@@ -17,6 +37,8 @@ export class SubtitleProcessor implements ISubtitleProcessor {
   private pollingInterval: number | null = null;
   private lastSubtitleText: string = '';
   private subtitleContainer: HTMLElement | null = null;
+  private disposed: boolean = false;
+  private gestureHandler: (() => void) | null = null;
 
   constructor() {
     this.storageService = new StorageService();
@@ -42,8 +64,75 @@ export class SubtitleProcessor implements ISubtitleProcessor {
       return;
     }
 
+    // Start the model download now rather than waiting for a subtitle, which on
+    // quiet footage can be minutes away. If the browser wants a user gesture first,
+    // wait for one instead of failing.
+    this.warmModel();
+
     // Start observing subtitle changes
     this.startObserving();
+  }
+
+  /**
+   * Get the model for the current pair ready, waiting for a user gesture if the
+   * browser insists on one before starting a download.
+   */
+  private warmModel(): void {
+    if (!this.settings || !this.translationEngine) {
+      return;
+    }
+
+    const { sourceLanguage, targetLanguage } = this.settings;
+
+    this.translationEngine
+      .prepare(sourceLanguage, targetLanguage)
+      .then((result) => {
+        if (this.disposed) {
+          return;
+        }
+        if (result === 'needs-gesture') {
+          Logger.info('Model download is waiting for you to interact with the page');
+          this.armGestureListener();
+        }
+      })
+      .catch(() => {
+        // Engine already reported it; the gesture listener will retry
+        if (!this.disposed) {
+          this.armGestureListener();
+        }
+      });
+  }
+
+  /**
+   * Retry the download on the next real interaction. Pressing play is the usual one,
+   * but any click or key press grants the activation Chrome asks for.
+   */
+  private armGestureListener(): void {
+    if (this.gestureHandler || this.disposed) {
+      return;
+    }
+
+    const handler = () => {
+      this.removeGestureListener();
+      if (!this.disposed) {
+        this.warmModel();
+      }
+    };
+
+    this.gestureHandler = handler;
+    for (const event of GESTURE_EVENTS) {
+      document.addEventListener(event, handler, { capture: true });
+    }
+  }
+
+  private removeGestureListener(): void {
+    if (!this.gestureHandler) {
+      return;
+    }
+    for (const event of GESTURE_EVENTS) {
+      document.removeEventListener(event, this.gestureHandler, { capture: true });
+    }
+    this.gestureHandler = null;
   }
 
   private startObserving(): void {
@@ -52,7 +141,12 @@ export class SubtitleProcessor implements ISubtitleProcessor {
 
     if (!subtitleContainer) {
       Logger.info('Waiting for video with subtitles... (will retry every 2s)');
-      setTimeout(() => this.startObserving(), 2000);
+      setTimeout(() => {
+        // A settings change may have replaced us while we were waiting
+        if (!this.disposed) {
+          this.startObserving();
+        }
+      }, 2000);
       return;
     }
 
@@ -108,6 +202,10 @@ export class SubtitleProcessor implements ISubtitleProcessor {
    */
   private startPolling(): void {
     this.pollingInterval = window.setInterval(() => {
+      if (this.disposed) {
+        return;
+      }
+
       // Re-query container each time in case NRK replaces the element
       const container = this.findSubtitleContainer();
       if (!container) return;
@@ -132,7 +230,8 @@ export class SubtitleProcessor implements ISubtitleProcessor {
   private findSubtitleContainer(): HTMLElement | null {
     // NRK TV subtitle selectors - ordered by specificity
     const possibleSelectors = [
-      'span[class*="subtitle"]',  // NRK subtitle span (most specific)
+      '.tv-player-subtitle-text',      // NRK's current subtitle element (exact match)
+      'span[class*="subtitle"]',       // fallback if NRK renames the class
       '.nrk-subtitle',
       '.video-subtitle',
       '.vjs-text-track-display',
@@ -165,7 +264,7 @@ export class SubtitleProcessor implements ISubtitleProcessor {
   }
 
   async processSubtitle(element: HTMLElement): Promise<void> {
-    if (!this.settings || !this.settings.enabled || !this.translationEngine) {
+    if (this.disposed || !this.settings || !this.settings.enabled || !this.translationEngine) {
       return;
     }
 
@@ -211,6 +310,11 @@ export class SubtitleProcessor implements ISubtitleProcessor {
         timestamp: new Date().toISOString()
       });
 
+      // We may have been replaced while the translation was in flight
+      if (this.disposed) {
+        return;
+      }
+
       // Add translation to the page
       this.addTranslation(element, text, translatedText);
 
@@ -223,6 +327,12 @@ export class SubtitleProcessor implements ISubtitleProcessor {
         }
       }
     } catch (error) {
+      if (String(error).includes('AWAITING_USER_GESTURE')) {
+        // Expected while the model is still waiting on a click - not a failure
+        this.armGestureListener();
+        return;
+      }
+
       Logger.error('Failed to translate subtitle:', error);
 
       // Send error log
@@ -265,6 +375,54 @@ export class SubtitleProcessor implements ISubtitleProcessor {
     return clone.textContent?.trim() || '';
   }
 
+  /**
+   * Honour the showOriginal setting by hiding or restoring NRK's own subtitle.
+   *
+   * Only called once a translation is ready, so a failed translation never leaves
+   * the viewer with no subtitle at all.
+   */
+  private applyOriginalVisibility(element: HTMLElement): void {
+    if (!this.settings) {
+      return;
+    }
+
+    if (this.settings.showOriginal) {
+      restoreAllHiddenOriginals();
+      return;
+    }
+
+    if (!element.hasAttribute(HIDDEN_ORIGINAL_ATTR)) {
+      element.setAttribute(HIDDEN_ORIGINAL_ATTR, element.style.display);
+      element.style.display = 'none';
+    }
+  }
+
+  /**
+   * Work out the translation font size.
+   *
+   * In 'relative' mode we measure NRK's own subtitle size and scale from it. NRK
+   * computes that size from viewport units, so it changes with window size and
+   * fullscreen - measuring on every injection keeps our text in proportion instead
+   * of drifting against a frozen pixel value.
+   */
+  private resolveFontSize(subtitleElement: HTMLElement): string {
+    if (!this.settings) {
+      return '16px';
+    }
+
+    if (this.settings.fontSizeMode === 'absolute') {
+      return `${this.settings.fontSize}px`;
+    }
+
+    const nrkSize = parseFloat(window.getComputedStyle(subtitleElement).fontSize);
+    if (!Number.isFinite(nrkSize) || nrkSize <= 0) {
+      // Could not measure - fall back to the fixed value rather than guessing
+      return `${this.settings.fontSize}px`;
+    }
+
+    return `${(nrkSize * this.settings.fontSizeScale).toFixed(2)}px`;
+  }
+
   private addTranslation(element: HTMLElement, original: string, translation: string): void {
     if (!this.settings) return;
 
@@ -287,7 +445,6 @@ export class SubtitleProcessor implements ISubtitleProcessor {
       translationElement.style.cssText = `
         display: block;
         color: #FFD700;
-        font-size: ${this.settings.fontSize}px;
         margin-top: 4px;
         text-align: center;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
@@ -301,10 +458,27 @@ export class SubtitleProcessor implements ISubtitleProcessor {
       }
     }
 
+    // Re-measured each time so the size tracks fullscreen and window resizes
+    translationElement.style.fontSize = this.resolveFontSize(element);
     translationElement.textContent = translation;
+
+    this.applyOriginalVisibility(element);
   }
 
   dispose(): void {
+    this.disposed = true;
+    this.removeGestureListener();
+
+    // Remove any translations we injected. Without this, every settings change
+    // (which tears down and rebuilds the processor) leaves the previous
+    // translation on screen - and switching position stacks a second one.
+    document
+      .querySelectorAll('.nrk-oversetter-translation')
+      .forEach((el) => el.remove());
+
+    // Put NRK's own subtitles back if showOriginal had hidden them
+    restoreAllHiddenOriginals();
+
     if (this.observer) {
       this.observer.disconnect();
       this.observer = null;

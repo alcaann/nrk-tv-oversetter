@@ -28,17 +28,11 @@
         <div class="form-group">
           <label for="target-language">Target Language</label>
           <select id="target-language">
-            <option value="en">English</option>
-            <option value="es">Spanish (Español)</option>
-            <option value="fr">French (Français)</option>
-            <option value="de">German (Deutsch)</option>
-            <option value="it">Italian (Italiano)</option>
-            <option value="pt">Portuguese (Português)</option>
-            <option value="ru">Russian (Русский)</option>
-            <option value="ja">Japanese (日本語)</option>
-            <option value="zh">Chinese (中文)</option>
+            <option value="">Loading languages...</option>
           </select>
-          <div class="description">The language you want subtitles translated to</div>
+          <div class="description" id="target-language-description">
+            The language you want subtitles translated to
+          </div>
         </div>
       </div>
 
@@ -74,9 +68,35 @@
         </div>
 
         <div class="form-group">
+          <label>Translation Size</label>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="font-mode-relative" name="font-mode" value="relative">
+              <label for="font-mode-relative">Match NRK's subtitle size</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="font-mode-absolute" name="font-mode" value="absolute">
+              <label for="font-mode-absolute">Fixed size</label>
+            </div>
+          </div>
+          <div class="description">
+            NRK scales their subtitles with the player, so matching keeps the translation
+            in proportion in fullscreen and on small windows.
+          </div>
+        </div>
+
+        <div class="form-group" id="font-scale-group">
+          <label for="font-scale">Size relative to NRK subtitles</label>
+          <input type="range" id="font-scale" min="0.4" max="1.5" step="0.05" value="0.75">
+          <div class="description">
+            <span id="font-scale-value">75%</span> of NRK's subtitle size
+          </div>
+        </div>
+
+        <div class="form-group" id="font-size-group">
           <label for="font-size">Font Size (px)</label>
           <input type="number" id="font-size" min="10" max="32" value="16">
-          <div class="description">Size of the translated subtitle text</div>
+          <div class="description">Fixed size, ignoring how large NRK draws their own subtitles</div>
         </div>
 
         <div class="form-group">
@@ -112,17 +132,18 @@
       </div>
 
       <div class="info-box">
-        <h3>About Built-in Browser Translation</h3>
+        <h3>About on-device translation</h3>
         <p>
-          This extension uses the built-in Translator API available in Chromium-based browsers
-          (Google Chrome and Microsoft Edge). The API works offline after downloading the translation
-          models. If the extension doesn't work, make sure you're using a recent version of Chrome or Edge.
+          This extension uses the Translator API built into Chromium-based browsers. Translation
+          runs entirely on your device, and works offline once the language model has downloaded.
+          The list of target languages above is read from your browser, so it reflects what your
+          browser actually supports - Edge 148 and later offers considerably more than Chrome.
         </p>
       </div>
     </div>
 
     <div class="footer">
-      NRK TV Oversetter v0.1.0 | Made for translating Norwegian subtitles
+      NRK TV Oversetter v0.2.0 | Made for translating Norwegian subtitles
     </div>
   </div>
 

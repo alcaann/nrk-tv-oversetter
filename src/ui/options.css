@@ -78,6 +78,18 @@ select {
   font-size: 14px;
 }
 
+input[type="range"] {
+  width: 100%;
+  margin-top: 8px;
+  cursor: pointer;
+  accent-color: #0066cc;
+}
+
+#font-scale-value {
+  font-weight: 600;
+  color: #0066cc;
+}
+
 .radio-group {
   display: flex;
   gap: 20px;
