@@ -17,7 +17,7 @@ Translate Norwegian subtitles on NRK TV into your language, in real-time and on 
 ## Detailed description
 
 ```
-NRK TV Oversetter translates Norwegian subtitles on NRK TV (tv.nrk.no) into your preferred language in real-time while you watch.
+This extension translates Norwegian subtitles on NRK TV (tv.nrk.no) into your preferred language in real-time while you watch.
 
 Translation runs entirely on your device using your browser's built-in translation model. Nothing you watch is sent anywhere.
 
@@ -51,7 +51,7 @@ REQUIREMENTS
 - An internet connection for the one-time model download; offline afterwards
 - Norwegian subtitles enabled on the NRK TV video
 
-Which languages are available depends on your browser. Edge 148 and later supports considerably more than Chrome does.
+Which languages are available depends on your browser.
 
 PRIVACY
 
@@ -59,10 +59,8 @@ No subtitle text, browsing history, or personal data is collected or transmitted
 
 SUPPORT
 
-Please report bugs and request languages on GitHub:
+Please feel free to report bugs and request languages on GitHub:
 https://github.com/alcaann/nrk-tv-oversetter/issues
-
-Store reviews are difficult to reply to, so a GitHub issue gets a much faster and more useful answer.
 
 This extension is not affiliated with NRK.
 ```
