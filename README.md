@@ -63,6 +63,12 @@ Contributions are welcome — this is a small project and pull requests are genu
 - **Want to fix something?** Fork, branch, and open a pull request. See [CONTRIBUTING.md](CONTRIBUTING.md) for the build and test loop.
 - **Subtitles stopped being detected?** NRK changes their site occasionally. That's usually a one-line selector fix — see [docs/CAPTION_DETECTOR.md](docs/CAPTION_DETECTOR.md).
 
+## Store listings
+
+Copy for both store listings lives in [store/](store/), kept in the repo so it stays
+in step with the code. Update it whenever the supported languages, download
+behaviour, or browser requirements change.
+
 ## Development
 
 ```bash
