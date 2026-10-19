@@ -25,9 +25,11 @@ const files = [
   'content/captions/CaptionTracker.js',
   'content/translation/TranslationStatus.js',
   'content/translation/TranslationQueue.js',
+  'content/ui/shieldFromPlayer.js',
   'content/ui/OverlayRenderer.js',
   'content/ui/HistoryPanel.js',
   'content/ui/NrkMenuIntegration.js',
+  'content/ui/FirstRunPrompt.js',
   'content/subtitle-injector.js'
 ];
 

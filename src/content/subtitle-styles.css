@@ -25,6 +25,21 @@
   font-weight: normal;
   font-style: italic;
   font-size: 0.8em !important;
+  pointer-events: auto;
+}
+
+.nrk-oversetter-translation.is-notice button {
+  display: block;
+  margin: 6px auto 2px;
+  padding: 4px 14px;
+  font: inherit;
+  font-style: normal;
+  font-weight: bold;
+  color: #141414;
+  background: #ffd700;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
 /*

@@ -11,7 +11,8 @@ import { TranslationStatus, describeStatus, pendingText } from './translation/Tr
 import { HistoryPanel } from './ui/HistoryPanel.js';
 import { OverlayRenderer, setNativeSubtitlesHidden } from './ui/OverlayRenderer.js';
 import { NrkMenuIntegration } from './ui/NrkMenuIntegration.js';
-import { currentMode, settingsForMode } from '../core/modes.js';
+import { FirstRunPrompt } from './ui/FirstRunPrompt.js';
+import { ModeChoice, currentMode, settingsForMode } from '../core/modes.js';
 
 /**
  * Content script entry point.
@@ -179,8 +180,8 @@ class Controller {
     // of leaving the viewer wondering whether the extension is working at all
     const message = describeStatus(this.translationStatus(), getLanguageName(this.settings.targetLanguage));
     if (!lines.length && active.length && message) {
-      const hint = message.action ? ' Click anywhere on the page to start it.' : '';
-      this.overlay.show([message.text + hint], true);
+      const action = message.action ? { label: message.action, run: () => this.queue.downloadNow() } : undefined;
+      this.overlay.show([message.text], { action });
       return;
     }
     this.overlay.show(lines);
@@ -197,6 +198,8 @@ class Controller {
         return { kind: 'unavailable' };
       case 'stalled':
         return { kind: 'stalled' };
+      case 'failed':
+        return { kind: 'failed', error: this.modelStatus.error };
       case 'downloading':
         return { kind: 'downloading', progress: this.modelStatus.progress };
     }
@@ -226,9 +229,29 @@ let controller: Controller | null = null;
 /** Guards against overlapping starts when settings change quickly */
 let generation = 0;
 
+/** Latest stored settings, for handlers that run outside the controller */
+let latestSettings: ExtensionSettings | null = null;
+
+/**
+ * Apply a mode picked on the page itself. The click that picked it is user
+ * activation, which is exactly what Chrome needs to download the model - so
+ * start the download now, while we have it, instead of asking for another click.
+ */
+function chooseMode(choice: ModeChoice): void {
+  if (choice !== 'off' && latestSettings) {
+    const { translationEngine, sourceLanguage, targetLanguage } = latestSettings;
+    TranslationEngineFactory.getEngine(translationEngine)
+      .then((engine) => engine.prepare(sourceLanguage, targetLanguage))
+      .catch((error) => Logger.warn('Could not start the model download:', error));
+  }
+  storage.update({ ...settingsForMode(choice), onboarded: true });
+}
+
 /** Runs even while the extension is off, so it can be switched back on from the player */
-const menu = new NrkMenuIntegration((choice) => storage.update(settingsForMode(choice)));
+const menu = new NrkMenuIntegration(chooseMode);
 menu.start();
+
+const firstRun = new FirstRunPrompt(chooseMode);
 
 async function applySettings(): Promise<void> {
   const current = ++generation;
@@ -236,7 +259,13 @@ async function applySettings(): Promise<void> {
   if (current !== generation) {
     return;
   }
+  latestSettings = settings;
   menu.setCurrent(currentMode(settings));
+  if (!settings.enabled && !settings.onboarded) {
+    firstRun.show(getLanguageName(settings.targetLanguage));
+  } else {
+    firstRun.hide();
+  }
 
   if (!settings.enabled) {
     controller?.dispose();

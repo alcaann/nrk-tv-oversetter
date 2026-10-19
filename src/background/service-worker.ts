@@ -12,19 +12,10 @@ chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     Logger.info('Extension installed');
 
-    // Set default settings
-    chrome.storage.sync.set({
-      enabled: true,
-      targetLanguage: 'en',
-      sourceLanguage: 'no',
-      translationEngine: 'edge',
-      showOriginal: true,
-      fontSize: 16,
-      position: 'below'
-    });
-
-    // Open options page on first install
-    chrome.runtime.openOptionsPage();
+    // Start switched off, leaving NRK exactly as the viewer had it. The first
+    // time a player appears, a card offers the modes; that click is also the user
+    // gesture Chrome needs to download the translation model.
+    chrome.storage.sync.set({ enabled: false, onboarded: false });
   } else if (details.reason === 'update') {
     Logger.info('Extension updated');
   }

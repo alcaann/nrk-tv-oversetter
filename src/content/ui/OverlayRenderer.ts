@@ -1,4 +1,10 @@
 import { ExtensionSettings } from '../../core/interfaces/IStorageService.js';
+import { shieldFromPlayer } from './shieldFromPlayer.js';
+
+/** A status line drawn in the translation's place, optionally with a button */
+export interface OverlayNotice {
+  action?: { label: string; run: () => void };
+}
 
 /** Kept from the original renderer so the options page and harness still recognise it */
 const OVERLAY_CLASS = 'nrk-oversetter-translation';
@@ -20,7 +26,7 @@ export class OverlayRenderer {
   private element: HTMLDivElement | null = null;
   private lifted: HTMLElement | null = null;
   private lines: string[] = [];
-  private notice = false;
+  private notice: OverlayNotice | null = null;
 
   constructor(private settings: ExtensionSettings) {}
 
@@ -32,9 +38,9 @@ export class OverlayRenderer {
   /**
    * The translations of whatever is on screen right now; empty during a gap.
    * `notice` marks a status line (e.g. the model is still downloading) rather
-   * than a translation, and is drawn more quietly.
+   * than a translation; it is drawn more quietly and may carry a button.
    */
-  show(lines: string[], notice = false): void {
+  show(lines: string[], notice: OverlayNotice | null = null): void {
     this.lines = lines;
     this.notice = notice;
     this.render();
@@ -62,7 +68,15 @@ export class OverlayRenderer {
     }
     const element = this.ensureElement(player);
     element.textContent = text;
-    element.classList.toggle('is-notice', this.notice);
+    element.classList.toggle('is-notice', this.notice !== null);
+    const action = this.notice?.action;
+    if (action) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = action.label;
+      button.addEventListener('click', action.run);
+      element.appendChild(button);
+    }
     element.style.display = 'block';
     element.style.fontSize = this.resolveFontSize(player);
     this.position(player, element);
@@ -75,6 +89,7 @@ export class OverlayRenderer {
     this.element?.remove();
     const element = document.createElement('div');
     element.className = OVERLAY_CLASS;
+    shieldFromPlayer(element);
     player.appendChild(element);
     this.element = element;
     return element;

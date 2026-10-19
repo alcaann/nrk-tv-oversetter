@@ -42,6 +42,11 @@ export interface ExtensionSettings {
   showTranslation: boolean;
   /** Learning panel folded away to a tab */
   panelCollapsed: boolean;
+  /**
+   * False only on a fresh install, until the viewer answers the first-run card on
+   * the player. Defaults to true so people updating never see it.
+   */
+  onboarded: boolean;
   /** Pause playback while the pointer is over the history panel */
   pauseOnHover: boolean;
   /** 'relative' scales with NRK's own subtitle size; 'absolute' uses a fixed pixel value */
@@ -63,6 +68,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   mode: 'dual',
   panelCollapsed: false,
   pauseOnHover: true,
+  onboarded: true,
   fontSizeMode: 'relative',
   fontSizeScale: 0.75,
   fontSize: 16,
