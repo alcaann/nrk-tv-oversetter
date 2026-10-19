@@ -10,6 +10,7 @@ node tools/harness/scenarios.cjs seek  # one scenario (after npm run build)
 npm run harness:audit                  # one episode, sampled for 60 s
 HEADED=1 node tools/harness/scenarios.cjs pause   # watch it in a window
 VERBOSE=1 / LOGS=1                     # echo / dump extension console output
+BROWSER=microsoft-edge node tools/harness/scenarios.cjs   # run against Edge
 ```
 
 Requirements: `google-chrome` on PATH (stable 137+), and a connection from a
@@ -28,8 +29,14 @@ region where NRK's content plays (the default episode is open to all of Norway).
   reports cues that were missed, shown with the previous line's translation,
   lingering in gaps, or absent from the panel.
 - **scenarios.cjs** - `spa-navigation`, `episode-switch`, `subtitle-toggle`,
-  `seek`, `pause`, `live`, `fullscreen`, `fresh-profile` (an empty profile, to
-  exercise the first-run model download).
+  `seek`, `pause`, `dual-mode`, `nrk-menu`, `live`, `fullscreen`,
+  `fresh-profile` (an empty profile, to exercise the model download) and
+  `first-run` (a real fresh install: off, with the mode card on the player).
+  Scenarios run in learning mode unless they set their own settings.
+
+Headless Edge downloads the model but never finishes installing it, and after a
+restart refuses with `NotSupportedError`, so the Edge download path cannot be
+verified end to end here. Use it for everything else.
 
 The user activation Chrome needs to download a model is granted by clicking the
 panel footer, which does nothing. Do not click page corners: some NRK pages have

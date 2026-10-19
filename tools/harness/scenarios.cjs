@@ -155,6 +155,36 @@ const scenarios = {
     return samples;
   },
 
+  /**
+   * A brand-new install: the extension starts off and offers the modes on the
+   * player. Picking one must start the model download with no further click.
+   */
+  async 'first-run'(page) {
+    await page.goto(EPISODE, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('video', { timeout: 30000 });
+    const card = page.locator('#nrk-oversetter-first-run .card');
+    await card.waitFor({ timeout: 10000 });
+    const before = await page.evaluate(() => ({
+      nativeHidden: document.documentElement.classList.contains('nrk-ov-hide-native'),
+      panel: !!document.getElementById('nrk-oversetter-panel'),
+    }));
+    console.log('  card shown; extension untouched before choosing:', JSON.stringify(before));
+    await page.screenshot({ path: path.join(os.tmpdir(), 'nrk-harness-first-run.png') });
+    // Clicks on the card must not reach NRK's player and toggle playback
+    await page.waitForFunction(() => document.querySelector('video').currentTime > 2, null, { timeout: 30000 });
+    const pausedBefore = await page.evaluate(() => document.querySelector('video').paused);
+    await card.locator('button[data-choice="learning"]').click();
+    await page.mouse.move(300, 300);
+    await page.waitForTimeout(1500);
+    const after = await page.evaluate(() => ({
+      cardGone: !document.getElementById('nrk-oversetter-first-run'),
+      playbackUnchanged: document.querySelector('video').paused,
+      banner: document.getElementById('nrk-oversetter-panel')?.shadowRoot.querySelector('.banner')?.innerText.replace(/\n/g, ' | '),
+    }));
+    console.log('  after choosing:', JSON.stringify({ ...after, playbackUnchanged: after.playbackUnchanged === pausedBefore }));
+    return sampleFor(page, 40);
+  },
+
   /** A live channel rather than on-demand */
   async live(page) {
     await page.goto('https://tv.nrk.no/direkte/nrk1', { waitUntil: 'domcontentloaded' });
@@ -199,7 +229,9 @@ const scenarios = {
 };
 
 /** Scenarios that need a browser profile of their own */
-const ISOLATED = new Set(['fresh-profile']);
+const ISOLATED = new Set(['fresh-profile', 'first-run']);
+/** Scenarios that must see the settings a real install produces */
+const UNTOUCHED_SETTINGS = new Set(['first-run']);
 
 (async () => {
   const wanted = process.argv.slice(2);
@@ -214,7 +246,9 @@ const ISOLATED = new Set(['fresh-profile']);
         isolated.profile = profile;
       }
       const harness = isolated || shared;
-      await harness.setSettings(LEARNING);
+      if (!UNTOUCHED_SETTINGS.has(name)) {
+        await harness.setSettings(LEARNING);
+      }
       const page = await harness.context.newPage();
       const logs = captureConsole(page);
       try {

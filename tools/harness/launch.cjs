@@ -18,6 +18,8 @@ const fs = require('fs');
 const REPO = path.resolve(__dirname, '..', '..');
 
 async function launch({
+  // BROWSER=microsoft-edge runs the same harness against Edge
+  binary = process.env.BROWSER || 'google-chrome',
   headless = process.env.HEADED ? false : true,
   port = 9300 + Math.floor(Math.random() * 600),
   profile = path.join(REPO, '.harness', 'profile'),
@@ -43,7 +45,7 @@ async function launch({
   ];
   if (headless) args.unshift('--headless=new');
 
-  const proc = spawn('google-chrome', args, { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });
+  const proc = spawn(binary, args, { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });
   const toChrome = proc.stdio[3];
   const fromChrome = proc.stdio[4];
   fromChrome.on('error', () => {});
