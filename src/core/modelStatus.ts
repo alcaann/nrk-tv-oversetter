@@ -12,13 +12,18 @@
  * telling the user to go and open one.
  */
 
-/** 'stalled': a download stopped making progress and was abandoned so it can be retried */
-export type ModelState = 'available' | 'downloading' | 'downloadable' | 'unavailable' | 'stalled';
+/**
+ * 'stalled': a download stopped making progress and was abandoned so it can be retried.
+ * 'failed': the browser refused to create a translator for another reason (see `error`).
+ */
+export type ModelState = 'available' | 'downloading' | 'downloadable' | 'unavailable' | 'stalled' | 'failed';
 
 export interface ModelStatusEntry {
   state: ModelState;
   /** 0-100, only meaningful while state is 'downloading' */
   progress?: number;
+  /** The browser's own message, when state is 'failed' */
+  error?: string;
   updatedAt: number;
 }
 

@@ -108,6 +108,12 @@ function applyModelStatus(
       modelInfo.textContent = 'Use Retry in the subtitle panel, or click the NRK page. If it keeps stalling, restart the browser.';
       break;
 
+    case 'failed':
+      modelStatusDot.className = 'dot error';
+      modelStatusText.textContent = `${language} model could not be loaded`;
+      modelInfo.textContent = 'Use Retry in the subtitle panel. If it keeps failing, restart the browser.';
+      break;
+
     case 'unavailable':
       modelStatusDot.className = 'dot error';
       modelStatusText.textContent = `${language} is not supported`;

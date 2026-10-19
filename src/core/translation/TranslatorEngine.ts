@@ -36,6 +36,7 @@ export class TranslatorEngine implements ITranslationEngine {
    * session every one of them would see an empty cache and start its own download.
    */
   private sessions: Map<string, Promise<any>> = new Map();
+  private preparing: Map<string, Promise<PrepareResult>> = new Map();
 
   async initialize(): Promise<void> {
     // The Translator API will be initialized when needed
@@ -98,15 +99,40 @@ export class TranslatorEngine implements ITranslationEngine {
     return activation ? activation.isActive === true : true;
   }
 
-  async prepare(sourceLang: string, targetLang: string): Promise<PrepareResult> {
+  /**
+   * Concurrent prepare() calls for one pair share a single attempt. One click can
+   * trigger several (the page-wide gesture listener and a Download button both
+   * react to it); a second Translator.create() fails because the first already
+   * used the click's activation, and must not tear down the download in flight.
+   */
+  prepare(sourceLang: string, targetLang: string): Promise<PrepareResult> {
+    const sessionKey = `${sourceLang}-${targetLang}`;
+    const inFlight = this.preparing.get(sessionKey);
+    if (inFlight) {
+      return inFlight;
+    }
+    const attempt = this.prepareOnce(sourceLang, targetLang, sessionKey).finally(() => {
+      this.preparing.delete(sessionKey);
+    });
+    this.preparing.set(sessionKey, attempt);
+    return attempt;
+  }
+
+  private async prepareOnce(sourceLang: string, targetLang: string, sessionKey: string): Promise<PrepareResult> {
     // @ts-ignore
     if (typeof Translator === 'undefined') {
       return 'unavailable';
     }
 
-    const sessionKey = `${sourceLang}-${targetLang}`;
-    if (this.sessions.has(sessionKey)) {
-      return 'ready';
+    // A session already exists or is downloading: ready means ready, so wait for it
+    const existing = this.sessions.get(sessionKey);
+    if (existing) {
+      try {
+        await existing;
+        return 'ready';
+      } catch {
+        // Its creator reported the failure and uncached it; fall through to retry
+      }
     }
 
     // @ts-ignore
@@ -138,8 +164,14 @@ export class TranslatorEngine implements ITranslationEngine {
         this.sessions.delete(sessionKey);
       }
       console.warn(`[TranslatorEngine] Could not prepare ${sessionKey}:`, error);
-      if (!String(error).includes(MODEL_STALLED)) {
+      if (String(error).includes(MODEL_STALLED)) {
+        // Already reported as stalled
+      } else if ((error as any)?.name === 'NotAllowedError') {
+        // Only the user activation was missing
         setModelStatus(sessionKey, { state: 'downloadable' });
+      } else {
+        // Asking again for a click would loop forever; say what the browser said
+        setModelStatus(sessionKey, { state: 'failed', error: String((error as any)?.message || error) });
       }
       return 'needs-gesture';
     }

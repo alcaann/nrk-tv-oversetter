@@ -4,6 +4,7 @@ export type TranslationStatus =
   | { kind: 'needs-click' }
   | { kind: 'downloading'; progress?: number }
   | { kind: 'stalled' }
+  | { kind: 'failed'; error?: string }
   | { kind: 'unavailable' };
 
 export interface StatusMessage {
@@ -33,6 +34,11 @@ export function describeStatus(status: TranslationStatus, language: string): Sta
         text: `The ${language} model download stopped making progress. If retrying does not help, restart the browser.`,
         action: 'Retry',
       };
+    case 'failed':
+      return {
+        text: `The browser could not load the ${language} model${status.error ? ` (${status.error.replace(/\.$/, '')})` : ''}. Try again; if it keeps failing, restart the browser.`,
+        action: 'Retry',
+      };
     case 'unavailable':
       return { text: `Your browser cannot translate Norwegian into ${language}.` };
   }
@@ -49,6 +55,8 @@ export function pendingText(status: TranslationStatus): string {
       return status.progress === undefined ? 'Downloading model…' : `Downloading model… ${status.progress}%`;
     case 'stalled':
       return 'Model download stalled';
+    case 'failed':
+      return 'Model could not be loaded';
     case 'unavailable':
       return 'Translation unavailable';
   }
