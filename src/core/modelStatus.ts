@@ -12,7 +12,8 @@
  * telling the user to go and open one.
  */
 
-export type ModelState = 'available' | 'downloading' | 'downloadable' | 'unavailable';
+/** 'stalled': a download stopped making progress and was abandoned so it can be retried */
+export type ModelState = 'available' | 'downloading' | 'downloadable' | 'unavailable' | 'stalled';
 
 export interface ModelStatusEntry {
   state: ModelState;
@@ -32,6 +33,23 @@ export interface ModelStatusMessage {
   type: typeof MODEL_STATUS_MESSAGE;
   pairKey: string;
   entry: ModelStatusEntry;
+}
+
+type LocalListener = (key: string, entry: ModelStatusEntry) => void;
+const localListeners: LocalListener[] = [];
+
+/**
+ * Follow status changes made in this same context. Runtime messages never reach
+ * the context that sent them, so the content script's own UI listens here.
+ */
+export function onLocalModelStatus(listener: LocalListener): () => void {
+  localListeners.push(listener);
+  return () => {
+    const index = localListeners.indexOf(listener);
+    if (index >= 0) {
+      localListeners.splice(index, 1);
+    }
+  };
 }
 
 export function pairKey(sourceLang: string, targetLang: string): string {
@@ -65,6 +83,9 @@ export async function setModelStatus(
 ): Promise<void> {
   const full: ModelStatusEntry = { ...entry, updatedAt: Date.now() };
 
+  for (const listener of localListeners) {
+    listener(key, full);
+  }
   broadcast(key, full);
 
   if (entry.state === 'downloading') {

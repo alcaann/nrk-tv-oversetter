@@ -23,6 +23,16 @@ export class StorageService implements IStorageService {
     }
   }
 
+  /** Write several settings in one storage change */
+  async update(changes: Partial<ExtensionSettings>): Promise<void> {
+    try {
+      await chrome.storage.sync.set(changes);
+    } catch (error) {
+      console.error('[StorageService] Error updating settings:', changes, error);
+      throw error;
+    }
+  }
+
   async getAll(): Promise<ExtensionSettings> {
     try {
       const result = await chrome.storage.sync.get(null);

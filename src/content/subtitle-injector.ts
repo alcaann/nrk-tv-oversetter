@@ -1,14 +1,17 @@
 import { Logger } from '../utils/Logger.js';
-import { sendSubtitleLog } from '../utils/subtitleLog.js';
-import { getSupportedLanguages } from '../core/languages.js';
+import { getLanguageName, getSupportedLanguages } from '../core/languages.js';
+import { ModelStatusEntry, onLocalModelStatus, pairKey } from '../core/modelStatus.js';
 import { StorageService } from '../utils/StorageService.js';
 import { ExtensionSettings } from '../core/interfaces/IStorageService.js';
 import { TranslationEngineFactory } from '../core/translation/TranslationEngineFactory.js';
 import { CaptionTracker } from './captions/CaptionTracker.js';
 import { Caption } from './captions/types.js';
 import { TranslationQueue } from './translation/TranslationQueue.js';
+import { TranslationStatus, describeStatus, pendingText } from './translation/TranslationStatus.js';
 import { HistoryPanel } from './ui/HistoryPanel.js';
 import { OverlayRenderer, setNativeSubtitlesHidden } from './ui/OverlayRenderer.js';
+import { NrkMenuIntegration } from './ui/NrkMenuIntegration.js';
+import { currentMode, settingsForMode } from '../core/modes.js';
 
 /**
  * Content script entry point.
@@ -34,6 +37,9 @@ class Controller {
   private video: HTMLVideoElement | null = null;
   private forced = false;
   private engineGeneration = 0;
+  /** Latest model status for the current language pair, reported by the engine */
+  private modelStatus: ModelStatusEntry | null = null;
+  private stopModelStatus: () => void;
 
   private readonly onTime = () => this.tick();
 
@@ -42,7 +48,7 @@ class Controller {
     this.queue = new TranslationQueue(
       () => this.video?.currentTime ?? 0,
       (caption, translation) => this.onTranslated(caption, translation),
-      () => this.updateStatus()
+      () => this.onTranslationStateChange()
     );
     this.overlay = new OverlayRenderer(settings);
     this.panel = new HistoryPanel(settings, {
@@ -52,8 +58,16 @@ class Controller {
         }
       },
       onSettingsChange: (changes) => {
-        Object.entries(changes).forEach(([key, value]) => storage.set(key, value));
+        storage.update(changes);
       },
+      onDownloadRequest: () => this.queue.downloadNow(),
+    });
+
+    this.stopModelStatus = onLocalModelStatus((key, entry) => {
+      if (key === pairKey(this.settings.sourceLanguage, this.settings.targetLanguage)) {
+        this.modelStatus = entry;
+        this.onTranslationStateChange();
+      }
     });
 
     this.tracker.subscribe({
@@ -65,9 +79,6 @@ class Controller {
       onActive: (active) => {
         this.panel.setActive(active);
         this.renderOverlay();
-        for (const caption of active) {
-          sendSubtitleLog('subtitle_detected', { original: caption.text });
-        }
       },
       onForcedChange: (forced) => {
         this.forced = forced;
@@ -85,6 +96,7 @@ class Controller {
 
   dispose(): void {
     this.engineGeneration++;
+    this.stopModelStatus();
     this.tracker.stop();
     this.queue.dispose();
     this.panel.dispose();
@@ -106,6 +118,7 @@ class Controller {
       previous.sourceLanguage !== settings.sourceLanguage ||
       previous.targetLanguage !== settings.targetLanguage;
     if (pairChanged) {
+      this.modelStatus = null;
       await this.configureEngine();
       // Old translations are in the wrong language now
       this.queue.request(this.tracker.captions);
@@ -157,10 +170,37 @@ class Controller {
   }
 
   private renderOverlay(): void {
-    const lines = this.tracker.activeCaptions
+    const active = this.tracker.activeCaptions;
+    const lines = active
       .map((caption) => this.queue.get(caption))
       .filter((text): text is string => Boolean(text));
+
+    // A line is on screen but its translation cannot come yet: say why, instead
+    // of leaving the viewer wondering whether the extension is working at all
+    const message = describeStatus(this.translationStatus(), getLanguageName(this.settings.targetLanguage));
+    if (!lines.length && active.length && message) {
+      const hint = message.action ? ' Click anywhere on the page to start it.' : '';
+      this.overlay.show([message.text + hint], true);
+      return;
+    }
     this.overlay.show(lines);
+  }
+
+  private onTranslationStateChange(): void {
+    this.updateStatus();
+    this.renderOverlay();
+  }
+
+  private translationStatus(): TranslationStatus {
+    switch (this.modelStatus?.state) {
+      case 'unavailable':
+        return { kind: 'unavailable' };
+      case 'stalled':
+        return { kind: 'stalled' };
+      case 'downloading':
+        return { kind: 'downloading', progress: this.modelStatus.progress };
+    }
+    return this.queue.needsGesture ? { kind: 'needs-click' } : { kind: 'ready' };
   }
 
   /**
@@ -172,11 +212,13 @@ class Controller {
   }
 
   private updateStatus(): void {
-    const parts = [`Source: ${this.tracker.sourceName}`, `${this.tracker.captions.length} lines loaded`];
-    if (this.queue.needsGesture) {
-      parts.push('click anywhere to download the translation model');
-    }
-    this.panel.setStatus(parts.join(' · '));
+    this.panel.setStatus(`Source: ${this.tracker.sourceName} · ${this.tracker.captions.length} lines loaded`);
+    const status = this.translationStatus();
+    this.panel.setTranslationStatus(
+      describeStatus(status, getLanguageName(this.settings.targetLanguage)),
+      pendingText(status),
+      status.kind === 'downloading' ? status.progress ?? 0 : undefined
+    );
   }
 }
 
@@ -184,12 +226,17 @@ let controller: Controller | null = null;
 /** Guards against overlapping starts when settings change quickly */
 let generation = 0;
 
+/** Runs even while the extension is off, so it can be switched back on from the player */
+const menu = new NrkMenuIntegration((choice) => storage.update(settingsForMode(choice)));
+menu.start();
+
 async function applySettings(): Promise<void> {
   const current = ++generation;
   const settings = await storage.getAll();
   if (current !== generation) {
     return;
   }
+  menu.setCurrent(currentMode(settings));
 
   if (!settings.enabled) {
     controller?.dispose();

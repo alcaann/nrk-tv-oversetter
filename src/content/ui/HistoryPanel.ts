@@ -1,11 +1,14 @@
 import { Caption } from '../captions/types.js';
 import { ExtensionSettings } from '../../core/interfaces/IStorageService.js';
+import { StatusMessage } from '../translation/TranslationStatus.js';
 
 const PANEL_WIDTH = 360;
 
 export interface HistoryPanelCallbacks {
   onSeek(time: number): void;
   onSettingsChange(changes: Partial<ExtensionSettings>): void;
+  /** Called from a click, so it carries the activation a model download needs */
+  onDownloadRequest(): void;
 }
 
 interface Row {
@@ -50,8 +53,20 @@ li:hover { background: #222; }
   white-space: pre-line; color: #ffd700; font-size: 14px; margin-top: 2px;
   filter: blur(5px); opacity: .45; transition: filter .12s, opacity .12s; user-select: none;
 }
-li:hover .en, .reveal-all .en { filter: none; opacity: 1; user-select: text; }
-.en.pending { color: #666; }
+li:hover .en { filter: none; opacity: 1; user-select: text; }
+/* Not a spoiler, so no blur - but only shown on hover, to keep the list calm */
+.en.pending { filter: none; opacity: 0; color: #888; font-style: italic; font-size: 12px; }
+.en.pending::before { content: var(--pending-text, "Translating…"); }
+li:hover .en.pending { opacity: 1; }
+.banner {
+  flex: none; display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  background: #2a2410; color: #f3e3a0; font-size: 13px; border-bottom: 1px solid #3a3215;
+}
+.banner[hidden] { display: none; }
+.banner span { flex: 1; }
+.banner .progress { height: 3px; background: #3a3215; border-radius: 2px; margin-top: 6px; overflow: hidden; }
+.banner .progress > div { height: 100%; background: #ffd700; width: 0; transition: width .3s; }
+.banner button { flex: none; color: #111; background: #ffd700; border-color: #ffd700; font-weight: 600; }
 footer { flex: none; padding: 6px 12px; font-size: 11px; color: #777; border-top: 1px solid #2a2a2a; }
 .empty { padding: 24px 16px; color: #777; font-size: 13px; }
 .tab {
@@ -76,6 +91,10 @@ export class HistoryPanel {
   private list!: HTMLOListElement;
   private empty!: HTMLDivElement;
   private footer!: HTMLElement;
+  private banner!: HTMLDivElement;
+  private bannerText!: HTMLSpanElement;
+  private bannerButton!: HTMLButtonElement;
+  private bannerProgress!: HTMLDivElement;
   private tab!: HTMLButtonElement;
   private toggles: Record<string, HTMLButtonElement> = {};
 
@@ -119,7 +138,7 @@ export class HistoryPanel {
     this.applySettings();
   }
 
-  /** The panel only appears while there is a player on the page */
+  /** The panel only appears while there is a player on the page (and in learning mode) */
   setVideo(video: HTMLVideoElement | null): void {
     this.video = video;
     this.pausedByPanel = false;
@@ -207,6 +226,17 @@ export class HistoryPanel {
     this.footer.textContent = text;
   }
 
+  /** Model download state; `pending` is what an untranslated line says on hover */
+  setTranslationStatus(message: StatusMessage | null, pending: string, progress?: number): void {
+    this.banner.hidden = !message;
+    this.bannerText.textContent = message?.text ?? '';
+    this.bannerButton.hidden = !message?.action;
+    this.bannerButton.textContent = message?.action ?? '';
+    this.bannerProgress.hidden = progress === undefined;
+    (this.bannerProgress.firstElementChild as HTMLElement).style.width = `${progress ?? 0}%`;
+    this.panel.style.setProperty('--pending-text', JSON.stringify(pending));
+  }
+
   private build(): void {
     const style = document.createElement('style');
     style.textContent = STYLES;
@@ -221,12 +251,21 @@ export class HistoryPanel {
         <button data-toggle="pauseOnHover" title="Pause while the pointer is over this panel">Pause on hover</button>
         <button data-action="collapse" title="Hide panel">»</button>
       </header>
+      <div class="banner" hidden>
+        <span><span class="banner-text"></span><div class="progress" hidden><div></div></div></span>
+        <button type="button"></button>
+      </div>
       <div class="empty">Lines will appear here as they are spoken.</div>
       <ol></ol>
       <footer></footer>`;
     this.list = this.panel.querySelector('ol')!;
     this.empty = this.panel.querySelector('.empty')!;
     this.footer = this.panel.querySelector('footer')!;
+    this.banner = this.panel.querySelector('.banner')!;
+    this.bannerText = this.panel.querySelector('.banner-text')!;
+    this.bannerButton = this.panel.querySelector('.banner button')!;
+    this.bannerProgress = this.panel.querySelector('.banner .progress')!;
+    this.bannerButton.addEventListener('click', () => this.callbacks.onDownloadRequest());
 
     this.panel.querySelectorAll<HTMLButtonElement>('button[data-toggle]').forEach((button) => {
       const key = button.dataset.toggle as 'showOriginal' | 'showTranslation' | 'pauseOnHover';
@@ -234,14 +273,14 @@ export class HistoryPanel {
       button.addEventListener('click', () => this.callbacks.onSettingsChange({ [key]: !this.settings[key] }));
     });
     this.panel.querySelector('[data-action="collapse"]')!.addEventListener('click', () => {
-      this.callbacks.onSettingsChange({ panelEnabled: false });
+      this.callbacks.onSettingsChange({ panelCollapsed: true });
     });
 
     this.tab = document.createElement('button');
     this.tab.className = 'tab';
     this.tab.textContent = 'Undertekster «';
     this.tab.title = 'Show subtitle history';
-    this.tab.addEventListener('click', () => this.callbacks.onSettingsChange({ panelEnabled: true }));
+    this.tab.addEventListener('click', () => this.callbacks.onSettingsChange({ panelCollapsed: false }));
 
     this.list.addEventListener('scroll', () => {
       const latest = this.latestVisibleRow();
@@ -271,14 +310,13 @@ export class HistoryPanel {
     original.lang = 'no';
     const translation = document.createElement('div');
     translation.className = 'en pending';
-    translation.textContent = '…';
     element.append(time, original, translation);
     return { caption, element, translation };
   }
 
   private applySettings(): void {
-    const present = this.video !== null;
-    const open = present && this.settings.panelEnabled;
+    const present = this.video !== null && this.settings.mode === 'learning';
+    const open = present && !this.settings.panelCollapsed;
     this.panel.hidden = !open;
     this.tab.hidden = !present || open;
     document.documentElement.style.setProperty('--nrk-ov-panel-width', `${PANEL_WIDTH}px`);

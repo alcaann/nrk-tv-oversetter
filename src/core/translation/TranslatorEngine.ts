@@ -2,6 +2,19 @@ import { ITranslationEngine, PrepareResult } from '../interfaces/ITranslationEng
 import { setModelStatus } from '../modelStatus.js';
 
 /**
+ * Chrome's model download sometimes stops making progress and never finishes.
+ * Without a deadline, every translation waits on it forever. After this long with
+ * no progress event we abandon it, report 'stalled', and let a click retry.
+ */
+const STALL_MS = 90_000;
+/** Unpacking after 100% fires no events and can legitimately take a while */
+const STALL_AFTER_COMPLETE_MS = 180_000;
+const STALL_CHECK_MS = 5_000;
+
+/** Thrown (inside a 'Translation failed' error) when a download was abandoned */
+export const MODEL_STALLED = 'MODEL_STALLED';
+
+/**
  * Translation engine using the built-in Chrome/Edge Translator API
  *
  * This uses the browser's built-in translation capabilities, which work offline
@@ -125,7 +138,9 @@ export class TranslatorEngine implements ITranslationEngine {
         this.sessions.delete(sessionKey);
       }
       console.warn(`[TranslatorEngine] Could not prepare ${sessionKey}:`, error);
-      setModelStatus(sessionKey, { state: 'downloadable' });
+      if (!String(error).includes(MODEL_STALLED)) {
+        setModelStatus(sessionKey, { state: 'downloadable' });
+      }
       return 'needs-gesture';
     }
   }
@@ -154,18 +169,43 @@ export class TranslatorEngine implements ITranslationEngine {
       console.log(`[TranslatorEngine] Model is ${availability}. Creating the session downloads it.`);
     }
 
-    // @ts-ignore
-    const session = await Translator.create({
-      sourceLanguage: sourceLang,
-      targetLanguage: targetLang,
-      monitor: (m: any) => {
-        m.addEventListener('downloadprogress', (event: any) => {
-          const percent = event.total ? Math.round((event.loaded / event.total) * 100) : 0;
-          console.log(`[TranslatorEngine] Downloading ${sessionKey}: ${percent}%`);
-          setModelStatus(sessionKey, { state: 'downloading', progress: percent });
-        });
+    const abort = new AbortController();
+    let lastProgressAt = Date.now();
+    let complete = false;
+    const watchdog = setInterval(() => {
+      const limit = complete ? STALL_AFTER_COMPLETE_MS : STALL_MS;
+      if (Date.now() - lastProgressAt > limit) {
+        abort.abort();
       }
-    });
+    }, STALL_CHECK_MS);
+
+    let session: any;
+    try {
+      // @ts-ignore
+      session = await Translator.create({
+        sourceLanguage: sourceLang,
+        targetLanguage: targetLang,
+        signal: abort.signal,
+        monitor: (m: any) => {
+          m.addEventListener('downloadprogress', (event: any) => {
+            const percent = event.total ? Math.round((event.loaded / event.total) * 100) : 0;
+            lastProgressAt = Date.now();
+            complete = percent >= 100;
+            console.log(`[TranslatorEngine] Downloading ${sessionKey}: ${percent}%`);
+            setModelStatus(sessionKey, { state: 'downloading', progress: percent });
+          });
+        }
+      });
+    } catch (error) {
+      if (abort.signal.aborted) {
+        console.warn(`[TranslatorEngine] Download of ${sessionKey} stalled; abandoned so it can be retried`);
+        setModelStatus(sessionKey, { state: 'stalled' });
+        throw new Error(MODEL_STALLED);
+      }
+      throw error;
+    } finally {
+      clearInterval(watchdog);
+    }
 
     console.log(`[TranslatorEngine] Created session for ${sessionKey}`);
     setModelStatus(sessionKey, { state: 'available' });

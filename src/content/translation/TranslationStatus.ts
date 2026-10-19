@@ -1,0 +1,55 @@
+/** Where translation stands, from the viewer's point of view */
+export type TranslationStatus =
+  | { kind: 'ready' }
+  | { kind: 'needs-click' }
+  | { kind: 'downloading'; progress?: number }
+  | { kind: 'stalled' }
+  | { kind: 'unavailable' };
+
+export interface StatusMessage {
+  text: string;
+  /** Label for a button that (re)starts the download; absent if there is nothing to do */
+  action?: string;
+}
+
+export function describeStatus(status: TranslationStatus, language: string): StatusMessage | null {
+  switch (status.kind) {
+    case 'ready':
+      return null;
+    case 'needs-click':
+      return {
+        text: `The ${language} translation model needs to download once (it then works offline).`,
+        action: 'Download now',
+      };
+    case 'downloading':
+      return {
+        text:
+          status.progress === undefined
+            ? `Downloading the ${language} model…`
+            : `Downloading the ${language} model… ${status.progress}%`,
+      };
+    case 'stalled':
+      return {
+        text: `The ${language} model download stopped making progress. If retrying does not help, restart the browser.`,
+        action: 'Retry',
+      };
+    case 'unavailable':
+      return { text: `Your browser cannot translate Norwegian into ${language}.` };
+  }
+}
+
+/** Short form, for a translation that is not there yet */
+export function pendingText(status: TranslationStatus): string {
+  switch (status.kind) {
+    case 'ready':
+      return 'Translating…';
+    case 'needs-click':
+      return 'Waiting for the model download';
+    case 'downloading':
+      return status.progress === undefined ? 'Downloading model…' : `Downloading model… ${status.progress}%`;
+    case 'stalled':
+      return 'Model download stalled';
+    case 'unavailable':
+      return 'Translation unavailable';
+  }
+}

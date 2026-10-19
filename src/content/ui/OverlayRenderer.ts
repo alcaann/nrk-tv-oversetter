@@ -20,6 +20,7 @@ export class OverlayRenderer {
   private element: HTMLDivElement | null = null;
   private lifted: HTMLElement | null = null;
   private lines: string[] = [];
+  private notice = false;
 
   constructor(private settings: ExtensionSettings) {}
 
@@ -28,9 +29,14 @@ export class OverlayRenderer {
     this.render();
   }
 
-  /** The translations of whatever is on screen right now; empty during a gap */
-  show(lines: string[]): void {
+  /**
+   * The translations of whatever is on screen right now; empty during a gap.
+   * `notice` marks a status line (e.g. the model is still downloading) rather
+   * than a translation, and is drawn more quietly.
+   */
+  show(lines: string[], notice = false): void {
     this.lines = lines;
+    this.notice = notice;
     this.render();
   }
 
@@ -56,6 +62,7 @@ export class OverlayRenderer {
     }
     const element = this.ensureElement(player);
     element.textContent = text;
+    element.classList.toggle('is-notice', this.notice);
     element.style.display = 'block';
     element.style.fontSize = this.resolveFontSize(player);
     this.position(player, element);

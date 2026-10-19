@@ -23,17 +23,25 @@ export interface IStorageService {
   saveAll(settings: ExtensionSettings): Promise<void>;
 }
 
+export type DisplayMode = 'dual' | 'learning';
+
 export interface ExtensionSettings {
   enabled: boolean;
   targetLanguage: string;
   sourceLanguage: string;
   translationEngine: 'edge' | 'google' | 'deepl' | 'custom';
+  /**
+   * 'dual': translation drawn under NRK's subtitles on the video (the original
+   * behaviour). 'learning': caption history in a side panel, translation on hover.
+   * Choosing a mode applies a preset to the two flags below (see core/modes.ts).
+   */
+  mode: DisplayMode;
   /** Show NRK's own Norwegian subtitles on the video */
   showOriginal: boolean;
   /** Show the translated line on the video */
   showTranslation: boolean;
-  /** Show the caption history side panel */
-  panelEnabled: boolean;
+  /** Learning panel folded away to a tab */
+  panelCollapsed: boolean;
   /** Pause playback while the pointer is over the history panel */
   pauseOnHover: boolean;
   /** 'relative' scales with NRK's own subtitle size; 'absolute' uses a fixed pixel value */
@@ -52,7 +60,8 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   translationEngine: 'edge',
   showOriginal: true,
   showTranslation: true,
-  panelEnabled: true,
+  mode: 'dual',
+  panelCollapsed: false,
   pauseOnHover: true,
   fontSizeMode: 'relative',
   fontSizeScale: 0.75,

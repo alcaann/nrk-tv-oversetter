@@ -19,6 +19,14 @@
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
+/* A status line in the translation's place, e.g. while the model downloads */
+.nrk-oversetter-translation.is-notice {
+  color: #ddd;
+  font-weight: normal;
+  font-style: italic;
+  font-size: 0.8em !important;
+}
+
 /*
  * Hide NRK's own subtitles without switching them off. The track keeps loading
  * and its cues keep flowing to the history panel; only the painting stops.

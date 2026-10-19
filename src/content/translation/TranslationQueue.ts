@@ -1,7 +1,7 @@
 import { Caption } from '../captions/types.js';
 import { ITranslationEngine } from '../../core/interfaces/ITranslationEngine.js';
+import { MODEL_STALLED } from '../../core/translation/TranslatorEngine.js';
 import { Logger } from '../../utils/Logger.js';
-import { sendSubtitleLog } from '../../utils/subtitleLog.js';
 
 /** Translate captions up to this far ahead of the playhead, so hover is instant */
 const LOOKAHEAD_S = 60;
@@ -19,8 +19,8 @@ export type TranslatedListener = (caption: Caption, translation: string) => void
  * NRK repeats short lines ("Ja.", "Hva?") constantly.
  *
  * If the model still needs downloading and Chrome wants a user gesture for that,
- * the queue parks itself until the next click or key press rather than failing
- * every line.
+ * or a download stalled, the queue parks itself until the next click or key press
+ * rather than failing every line.
  */
 export class TranslationQueue {
   private engine: ITranslationEngine | null = null;
@@ -103,21 +103,20 @@ export class TranslationQueue {
           return;
         }
         this.cache.set(next.text, translation);
-        sendSubtitleLog('translation_complete', { original: next.text, translated: translation });
         this.onTranslated(next, translation);
       })
       .catch((error) => {
         if (generation !== this.generation) {
           return;
         }
-        if (String(error).includes('AWAITING_USER_GESTURE')) {
+        const reason = String(error);
+        if (reason.includes('AWAITING_USER_GESTURE') || reason.includes(MODEL_STALLED)) {
           this.pending.set(next.id, next);
           this.parkUntilGesture();
           return;
         }
         // Dropped rather than retried, so a broken engine cannot spin
         Logger.error('Failed to translate caption:', error);
-        sendSubtitleLog('translation_error', { original: next.text, error: String(error) });
       })
       .finally(() => {
         if (generation === this.generation) {
@@ -174,6 +173,31 @@ export class TranslationQueue {
       });
   }
 
+  /**
+   * Start (or restart) the model download now. Must be called from a click or key
+   * handler: that is the user activation Chrome requires.
+   */
+  downloadNow(): void {
+    this.removeGestureListener();
+    const generation = this.generation;
+    // prepare() runs inside the gesture, which is what lets the download start
+    this.engine
+      ?.prepare(this.sourceLang, this.targetLang)
+      .then((result) => {
+        if (generation !== this.generation) {
+          return;
+        }
+        if (result === 'ready') {
+          this.waitingForGesture = false;
+          this.onStateChange();
+          this.pump();
+        } else if (result === 'needs-gesture') {
+          this.parkUntilGesture();
+        }
+      })
+      .catch(() => generation === this.generation && this.parkUntilGesture());
+  }
+
   private parkUntilGesture(): void {
     if (!this.waitingForGesture) {
       this.waitingForGesture = true;
@@ -182,26 +206,7 @@ export class TranslationQueue {
     if (this.gestureHandler) {
       return;
     }
-    const handler = () => {
-      this.removeGestureListener();
-      const generation = this.generation;
-      // prepare() runs inside the gesture, which is what lets the download start
-      this.engine
-        ?.prepare(this.sourceLang, this.targetLang)
-        .then((result) => {
-          if (generation !== this.generation) {
-            return;
-          }
-          if (result === 'ready') {
-            this.waitingForGesture = false;
-            this.onStateChange();
-            this.pump();
-          } else if (result === 'needs-gesture') {
-            this.parkUntilGesture();
-          }
-        })
-        .catch(() => generation === this.generation && this.parkUntilGesture());
-    };
+    const handler = () => this.downloadNow();
     this.gestureHandler = handler;
     for (const event of GESTURE_EVENTS) {
       document.addEventListener(event, handler, { capture: true });
