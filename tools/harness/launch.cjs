@@ -93,7 +93,15 @@ async function launch({
     proc.kill();
   };
 
-  return { browser, context, extensionId, close, pipeSend };
+  /** Write extension settings through an extension page, which has chrome.storage */
+  const setSettings = async (settings) => {
+    const page = await context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/dist/ui/options.html`);
+    await page.evaluate((s) => chrome.storage.sync.set(s), settings);
+    await page.close();
+  };
+
+  return { browser, context, extensionId, close, pipeSend, setSettings };
 }
 
 /** Collect extension console output from a page, optionally echoing it live. */

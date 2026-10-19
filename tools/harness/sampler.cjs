@@ -110,8 +110,8 @@ function report(samples, label = '') {
 
   console.log(`Sampled ${samples.length} times, video ${samples[0]?.t}s -> ${samples.at(-1)?.t}s`);
   console.log(`Cues on the TextTrack:                     ${cueRows.length}`);
-  console.log(`  never got their own translation:         ${missed.length}`);
-  console.log(`  showed the PREVIOUS line's translation:  ${staleRows.length}`);
+  console.log(`  no translation on the video:             ${missed.length}`);
+  console.log(`  video showed the PREVIOUS translation:  ${staleRows.length}`);
   console.log(`  median latency cue -> translation:       ${median ?? '-'}s`);
   console.log(`Gaps where a translation lingered:         ${lingering.length}`);
   console.log(`Samples with >1 translation element:       ${duplicates.length}`);

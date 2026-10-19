@@ -4,6 +4,7 @@
  *
  * Usage: node tools/harness/scenarios.cjs [scenario ...]
  *   With no arguments every scenario runs. VERBOSE=1 echoes extension console output.
+ *   Scenarios run in learning mode unless they set their own settings.
  */
 const { launch, captureConsole } = require('./launch.cjs');
 const fs = require('fs');
@@ -14,22 +15,29 @@ const { startSampling, report } = require('./sampler.cjs');
 const EPISODE = 'https://tv.nrk.no/serie/humoretaten/sesong/4/episode/IUFH21002726?autoplay=true';
 const SUBS_MENU = 'button[aria-label="Valg for undertekster og tilgjengelighet"]';
 
+const LEARNING = { enabled: true, mode: 'learning', showOriginal: false, showTranslation: false, panelCollapsed: false, pauseOnHover: true };
+const DUAL = { enabled: true, mode: 'dual', showOriginal: true, showTranslation: true };
+
 /**
  * A trusted click grants the user activation Chrome needs to download the model.
  * It has to land somewhere inert: page corners hold NRK links on some pages. The
- * panel footer is ours and does nothing; moving away again resumes playback the
- * panel paused on hover.
+ * panel footer is ours and does nothing (moving away again resumes playback the
+ * panel paused on hover); without the panel, the episode title.
  */
 async function grantActivation(page) {
   const footer = page.locator('#nrk-oversetter-panel footer');
-  await footer.waitFor({ timeout: 15000 });
-  await footer.click();
+  if (await footer.isVisible().catch(() => false)) {
+    await footer.click();
+  } else {
+    await page.locator('h1:visible').first().click();
+  }
   await page.mouse.move(300, 300);
 }
 
 async function openEpisode(page, url = EPISODE) {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('video', { timeout: 30000 });
+  await page.waitForTimeout(2500);
   await grantActivation(page);
 }
 
@@ -109,6 +117,44 @@ const scenarios = {
     });
   },
 
+  /** The original behaviour: translation drawn under NRK's subtitles, no panel */
+  async 'dual-mode'(page, harness) {
+    await harness.setSettings(DUAL);
+    await openEpisode(page);
+    const samples = await sampleFor(page, 30);
+    const panelVisible = await page.locator('#nrk-oversetter-panel .panel').isVisible().catch(() => false);
+    console.log(`  panel visible in dual mode: ${panelVisible}`);
+    await harness.setSettings(LEARNING);
+    return samples;
+  },
+
+  /** Pick a mode from our section in NRK's own subtitle menu */
+  async 'nrk-menu'(page, harness) {
+    await harness.setSettings(DUAL);
+    await openEpisode(page);
+    await page.waitForTimeout(4000);
+    await page.mouse.move(700, 400);
+    await page.click(SUBS_MENU);
+    const section = page.locator('[data-nrk-oversetter-menu]');
+    await section.waitFor({ timeout: 5000 });
+    await page.screenshot({ path: path.join(os.tmpdir(), 'nrk-harness-menu.png') });
+    await section.locator('button[data-mode="learning"]').click();
+    await page.waitForTimeout(1000);
+    const state = await page.evaluate(() => ({
+      dialogOpen: !!document.querySelector('dialog[data-testid="player-subtitle-settings-dialog"][open]'),
+      selected: document.querySelector('[data-nrk-oversetter-menu] [aria-current="true"]')?.dataset.mode,
+      nrkSubtitleChoice: localStorage.getItem('nrk-tv-preferred-subtitle'),
+    }));
+    console.log('  after choosing Learning panel:', JSON.stringify(state));
+    await page.keyboard.press('Escape');
+    await page.mouse.move(300, 300);
+    const samples = await sampleFor(page, 20);
+    const panelVisible = await page.locator('#nrk-oversetter-panel .panel').isVisible().catch(() => false);
+    console.log(`  panel visible after choosing it: ${panelVisible}`);
+    await harness.setSettings(LEARNING);
+    return samples;
+  },
+
   /** A live channel rather than on-demand */
   async live(page) {
     await page.goto('https://tv.nrk.no/direkte/nrk1', { waitUntil: 'domcontentloaded' });
@@ -167,11 +213,12 @@ const ISOLATED = new Set(['fresh-profile']);
         isolated = await launch({ profile });
         isolated.profile = profile;
       }
-      const { context } = isolated || shared;
-      const page = await context.newPage();
+      const harness = isolated || shared;
+      await harness.setSettings(LEARNING);
+      const page = await harness.context.newPage();
       const logs = captureConsole(page);
       try {
-        const samples = await scenarios[name](page);
+        const samples = await scenarios[name](page, harness);
         report(samples, name);
       } catch (error) {
         console.log(`\n===== ${name} ===== FAILED: ${error.message.split('\n')[0]}`);
