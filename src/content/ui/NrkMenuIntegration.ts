@@ -84,6 +84,9 @@ export class NrkMenuIntegration {
       button.style.textAlign = 'left';
 
       const text = document.createElement('span');
+      // NRK's buttons never shrink or wrap their label, so a long one pushes the
+      // radio past the dialog edge (theirs too). Let ours wrap instead.
+      text.style.cssText = 'flex: 1 1 auto; min-width: 0; white-space: normal; overflow-wrap: anywhere;';
       text.textContent = option.label;
       const description = document.createElement('span');
       description.textContent = option.description;
