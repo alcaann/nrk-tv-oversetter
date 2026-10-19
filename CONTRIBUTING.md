@@ -35,7 +35,7 @@ Load the unpacked extension:
 
 1. Open a video on [tv.nrk.no](https://tv.nrk.no) with Norwegian subtitles turned on
 2. Confirm translations appear below the original subtitles
-3. Open the extension's options page — the live subtitle log shows what is being detected and translated in real time, which is the fastest way to see whether detection or translation is the thing that broke
+3. Switch to the learning panel: its footer shows the caption source and how many lines were loaded, and its banner shows the model download state, which is the fastest way to see whether capture or translation is the thing that broke
 
 Please test on both Chrome and Edge 148+ if you can. The two browsers differ in ways that matter: Edge supports far more languages, and Chrome requires a user gesture before the model download can start.
 

@@ -35,7 +35,7 @@ Edge shipped the Translator API to **stable in Edge 148**. Earlier Edge versions
 - Works offline once the language model has downloaded
 - **Caption history side panel**: every Norwegian line so far, with the translation hidden until you hover it. Hovering the panel pauses the video and leaving resumes it, and clicking a timestamp replays that line
 - Works with NRK's own subtitles hidden or switched off: the captions are still captured
-- Live subtitle log for debugging detection issues
+- Choose the mode from the popup, the settings page, or **NRK's own subtitle menu** (works in fullscreen)
 
 > **Missing a language?** The list comes from your browser, so if something is absent your browser cannot translate into it yet. Edge 148+ supports considerably more than Chrome. [Open an issue](https://github.com/alcaann/nrk-tv-oversetter/issues/new/choose) if something looks wrong.
 
@@ -44,8 +44,8 @@ Edge shipped the Translator API to **stable in Edge 148**. Earlier Edge versions
 ## Usage
 
 1. Open [tv.nrk.no](https://tv.nrk.no) and start a video with Norwegian subtitles enabled
-2. Click the extension icon, then **Download Translation Model** (first run only)
-3. Translations appear below the Norwegian subtitles in yellow
+2. Pick a mode: **Dual subtitles** (translation under the Norwegian, on the video) or **Learning panel** (history on the side, translation on hover). From the extension icon, or in NRK's subtitle menu under *Oversetter*
+3. The first time, the translation model downloads once: click **Download now** (or anywhere on the page)
 
 Settings: right-click the extension icon → **Options**.
 
@@ -102,7 +102,7 @@ Then load the unpacked extension: `chrome://extensions` (or `edge://extensions`)
 | [src/core/interfaces/](src/core/interfaces/) | Interfaces for extensibility |
 | [src/ui/](src/ui/) | Popup and options pages |
 
-**Adding a translation engine:** implement [ITranslationEngine](src/core/interfaces/ITranslationEngine.ts), register it in [TranslationEngineFactory.ts](src/core/translation/TranslationEngineFactory.ts), add it to the UI dropdowns.
+**Adding a translation engine:** implement [ITranslationEngine](src/core/interfaces/ITranslationEngine.ts) and register it in [TranslationEngineFactory.ts](src/core/translation/TranslationEngineFactory.ts). There is no engine selector in the UI while there is only one engine.
 
 ## How it works
 

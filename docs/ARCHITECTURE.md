@@ -29,7 +29,8 @@ nrk-tv-oversetter/
 │   │       └── TranslationEngineFactory.ts    # Engine factory pattern
 │   ├── ui/
 │   │   ├── popup.html/css/ts          # Extension popup UI (enable/disable, download model)
-│   │   └── options.html/css/ts        # Settings page + live subtitle log viewer
+│   │   ├── options.html/css/ts        # Settings page
+│   │   ├── base.css, modePicker.ts    # Shared by popup and options
 │   └── utils/
 │       ├── StorageService.ts          # Chrome storage wrapper
 │       └── Logger.ts                  # Logging utility with dev mode toggle
@@ -109,25 +110,31 @@ const result = await session.translate(text);
   fontSizeMode, fontSizeScale, fontSize,
   showOriginal: boolean,        // NRK's Norwegian subtitles on the video
   showTranslation: boolean,     // Translated line on the video
-  panelEnabled: boolean,        // History panel open (collapsed to a tab otherwise)
+  mode: 'dual' | 'learning',    // Choosing one applies a preset (core/modes.ts)
+  panelCollapsed: boolean,      // Learning panel folded to a tab
   pauseOnHover: boolean         // Pause while the pointer is over the panel
 }
 ```
 
 ### 4. UI Components
 
-#### Popup (popup.html/css/ts)
-- Enable/disable extension toggle
-- Target language selector
-- Translation engine selector
-- Model download button (shows if model not available)
+The same three choices (Off / Dual subtitles / Learning panel, from
+[core/modes.ts](../src/core/modes.ts)) appear in three places, all writing the
+same settings:
 
-#### Options Page (options.html/css/ts)
-- Full settings configuration
-- **Live Subtitle Log Viewer**: Real-time feed of detected/translated subtitles
-- Info box about Translator API
+- **Popup** (popup.html/css/ts): mode, target language, model download status.
+- **Options page** (options.html/css/ts): everything, saved as it changes.
+- **NRK's subtitle menu** ([NrkMenuIntegration.ts](../src/content/ui/NrkMenuIntegration.ts)):
+  an "Oversetter" section injected into NRK's own dialog, styled with NRK's
+  classes, so the mode can be changed in fullscreen.
 
-**Log Viewer**: Receives messages from content script via `chrome.runtime.sendMessage()`
+`base.css` and `modePicker.ts` are shared by the popup and options page.
+
+The model download status reaches the page UI through `onLocalModelStatus()`
+(runtime messages never reach the context that sent them) and the popup through
+`chrome.storage.local` plus a broadcast. `TranslatorEngine` abandons a download
+that makes no progress for 90 s (180 s after reaching 100%) and reports
+`stalled`, so a click can retry instead of every translation waiting forever.
 
 ## Data Flow
 
@@ -137,7 +144,6 @@ const result = await session.translate(text);
 3. `TranslationQueue` translates them, nearest the playhead first.
 4. On each `timeupdate` the panel reveals lines whose start has been reached;
    `cuechange` marks the active line and updates the on-video translation.
-5. The options page's live log still receives `SUBTITLE_LOG` messages.
 
 ## Build Process
 
@@ -257,10 +263,9 @@ case 'my-engine':
 - **Production**: Only errors/warnings shown
 - **Logs**: Prefixed with `[NRK-Oversetter]`
 
-### Live Log Viewer
-- Open Options page → "Real-Time Subtitle Log"
-- Shows detected subtitles, translations, errors
-- Must be open BEFORE playing video
+### Panel footer
+- In learning mode the panel footer shows the caption source (`text-track` or
+  `dom`) and how many lines the player has loaded.
 
 ### Common Issues
 See [CAPTION_DETECTOR.md](CAPTION_DETECTOR.md) "Common Issues & Solutions" section

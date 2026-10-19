@@ -30,7 +30,8 @@ KEY FEATURES
 - Show the translation alongside the Norwegian original, or hide the original and show only the translation
 - Translation size that scales with NRK's own subtitles, so it stays in proportion in fullscreen and on small windows, or a fixed size if you prefer
 - Choose whether translations appear above or below the original
-- Live subtitle log to see exactly what is being detected and translated
+- Learning panel: a running history of the Norwegian lines beside the video, with each translation hidden until you hover it, and the video pausing while you read
+- Choose the mode right in NRK's own subtitle menu, even in fullscreen
 
 HOW TO USE
 
