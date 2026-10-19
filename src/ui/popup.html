@@ -4,60 +4,43 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NRK TV Oversetter</title>
+  <link rel="stylesheet" href="base.css">
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="header">
-    <h1>NRK TV Oversetter</h1>
-    <div class="subtitle">Subtitle Translator</div>
-  </div>
-
-  <div class="status" id="status">
-    <span id="status-text">Loading...</span>
-  </div>
-
-  <div class="control-group">
-    <div class="toggle-container">
-      <span class="toggle-label">Enable Translation</span>
-      <label class="toggle-switch">
-        <input type="checkbox" id="toggle-enabled">
-        <span class="slider"></span>
-      </label>
+  <header class="brand">
+    <img src="../../icons/icon48.png" alt="" width="32" height="32">
+    <div>
+      <h1>NRK TV Oversetter</h1>
+      <p>Norwegian subtitles, translated on your device</p>
     </div>
+  </header>
 
-    <div class="language-selector">
-      <label for="target-language">Translate to:</label>
-      <select id="target-language">
-        <option value="">Loading languages...</option>
-      </select>
-    </div>
+  <section>
+    <h2 class="eyebrow">Mode</h2>
+    <div id="modes"></div>
+  </section>
 
-    <div class="language-selector">
-      <label for="translation-engine">Translation Engine:</label>
-      <select id="translation-engine">
-        <option value="edge">Built-in Browser Translation</option>
-        <option value="google" disabled>Google Translate (Coming Soon)</option>
-        <option value="deepl" disabled>DeepL (Coming Soon)</option>
-      </select>
-    </div>
-  </div>
+  <section>
+    <label class="eyebrow" for="target-language">Translate to</label>
+    <select id="target-language">
+      <option value="">Loading languages…</option>
+    </select>
+  </section>
 
-  <div class="model-status" id="model-status">
-    <div class="model-status-header">
-      <span class="model-status-dot" id="model-status-dot"></span>
-      <span id="model-status-text">Checking model...</span>
+  <section class="model" id="model-status">
+    <div class="model-header">
+      <span class="dot" id="model-status-dot"></span>
+      <span id="model-status-text">Checking model…</span>
     </div>
-    <div class="progress-track" id="progress-track" style="display: none;">
-      <div class="progress-bar" id="progress-bar"></div>
-    </div>
+    <div class="progress" id="progress-track" hidden><div id="progress-bar"></div></div>
     <div class="model-info" id="model-info"></div>
-  </div>
+  </section>
 
-  <button class="button" id="open-settings">Advanced Settings</button>
-
-  <div class="footer">
-    v0.2.0 | For NRK TV
-  </div>
+  <footer>
+    <button class="link" id="open-settings">All settings</button>
+    <span id="version"></span>
+  </footer>
 
   <script src="popup.js" type="module"></script>
 </body>

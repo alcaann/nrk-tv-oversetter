@@ -1,0 +1,121 @@
+/* Shared look for the popup and the options page: dark, like NRK TV and the panel */
+
+:root {
+  --bg: #141414;
+  --surface: #1d1d1d;
+  --surface-2: #262626;
+  --border: #2e2e2e;
+  --text: #ededed;
+  --muted: #9a9a9a;
+  --accent: #ffd700;
+  --accent-text: #141414;
+  --ok: #4caf7a;
+  --warn: #e0a83a;
+  --error: #e05a4f;
+  --radius: 10px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+/* Layout rules like display: grid would otherwise win over the hidden attribute */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+h1, h2, h3 { margin: 0; font-weight: 600; }
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+
+select, input[type="number"] {
+  width: 100%;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+select:focus-visible, input:focus-visible, button:focus-visible, .mode:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Mode picker: three cards, one selected */
+.modes { display: grid; gap: 6px; }
+
+.mode {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 2px 10px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.mode:hover { border-color: #444; }
+
+.mode input {
+  appearance: none;
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #666;
+  border-radius: 50%;
+  grid-row: span 2;
+}
+
+.mode input:checked {
+  border-color: var(--accent);
+  background: radial-gradient(var(--accent) 0 3px, transparent 4px);
+}
+
+.mode:has(input:checked) { border-color: var(--accent); background: #221f12; }
+
+.mode-label { font-weight: 600; }
+.mode-description { font-size: 12px; color: var(--muted); }
+
+/* Model status */
+.model {
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.model-header { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.ready { background: var(--ok); }
+.dot.working { background: var(--warn); animation: pulse 1.2s ease-in-out infinite; }
+.dot.error { background: var(--error); }
+.dot.idle { background: var(--muted); }
+
+@keyframes pulse { 50% { opacity: 0.35; } }
+
+.model-info { margin-top: 4px; font-size: 12px; color: var(--muted); }
+
+.progress { height: 4px; margin-top: 8px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
+.progress > div { height: 100%; width: 0; background: var(--accent); transition: width 0.3s; }

@@ -1,6 +1,8 @@
 import { StorageService } from '../utils/StorageService.js';
 import { ExtensionSettings } from '../core/interfaces/IStorageService.js';
 import { getLanguageName, getSupportedLanguages, populateLanguageSelect } from '../core/languages.js';
+import { currentMode, settingsForMode } from '../core/modes.js';
+import { renderModePicker } from './modePicker.js';
 import {
   MODEL_STATUS_MESSAGE,
   ModelState,
@@ -18,11 +20,7 @@ const storage = new StorageService();
 let currentPair = '';
 
 // DOM elements
-const toggleEnabled = document.getElementById('toggle-enabled') as HTMLInputElement;
 const targetLanguage = document.getElementById('target-language') as HTMLSelectElement;
-const translationEngine = document.getElementById('translation-engine') as HTMLSelectElement;
-const statusElement = document.getElementById('status') as HTMLDivElement;
-const statusText = document.getElementById('status-text') as HTMLSpanElement;
 const openSettings = document.getElementById('open-settings') as HTMLButtonElement;
 const modelStatusContainer = document.getElementById('model-status') as HTMLDivElement;
 const modelStatusDot = document.getElementById('model-status-dot') as HTMLSpanElement;
@@ -30,6 +28,12 @@ const modelStatusText = document.getElementById('model-status-text') as HTMLSpan
 const modelInfo = document.getElementById('model-info') as HTMLDivElement;
 const progressTrack = document.getElementById('progress-track') as HTMLDivElement;
 const progressBar = document.getElementById('progress-bar') as HTMLDivElement;
+
+const selectMode = renderModePicker(document.getElementById('modes') as HTMLElement, (choice) => {
+  storage.update(settingsForMode(choice));
+});
+
+(document.getElementById('version') as HTMLSpanElement).textContent = `v${chrome.runtime.getManifest().version}`;
 
 // Load current settings
 async function loadSettings() {
@@ -50,17 +54,9 @@ async function loadSettings() {
 }
 
 function updateUI(settings: ExtensionSettings) {
-  toggleEnabled.checked = settings.enabled;
+  selectMode(currentMode(settings));
   targetLanguage.value = settings.targetLanguage;
-  translationEngine.value = settings.translationEngine;
-
-  if (settings.enabled) {
-    statusElement.className = 'status enabled';
-    statusText.textContent = `Active - Translating to ${getLanguageName(settings.targetLanguage)}`;
-  } else {
-    statusElement.className = 'status disabled';
-    statusText.textContent = 'Translation Disabled';
-  }
+  modelStatusContainer.hidden = !settings.enabled;
 }
 
 /**
@@ -71,12 +67,6 @@ function updateUI(settings: ExtensionSettings) {
  * this does is explain what is happening while that occurs.
  */
 async function renderModelStatus(settings: ExtensionSettings) {
-  if (settings.translationEngine !== 'edge') {
-    modelStatusContainer.style.display = 'none';
-    return;
-  }
-
-  modelStatusContainer.style.display = 'block';
   currentPair = pairKey(settings.sourceLanguage, settings.targetLanguage);
 
   const entry = await getModelStatus(currentPair);
@@ -91,20 +81,20 @@ function applyModelStatus(
   const language = getLanguageName(settings.targetLanguage);
   const showProgress = state === 'downloading';
 
-  progressTrack.style.display = showProgress ? 'block' : 'none';
+  progressTrack.hidden = !showProgress;
   if (showProgress) {
     progressBar.style.width = `${progress ?? 0}%`;
   }
 
   switch (state) {
     case 'available':
-      modelStatusDot.className = 'model-status-dot ready';
+      modelStatusDot.className = 'dot ready';
       modelStatusText.textContent = `${language} model ready`;
       modelInfo.textContent = 'Translations run on your device, offline.';
       break;
 
     case 'downloading':
-      modelStatusDot.className = 'model-status-dot working';
+      modelStatusDot.className = 'dot working';
       modelStatusText.textContent =
         progress === undefined
           ? `Downloading ${language} model...`
@@ -112,8 +102,14 @@ function applyModelStatus(
       modelInfo.textContent = 'Subtitles will start once this finishes.';
       break;
 
+    case 'stalled':
+      modelStatusDot.className = 'dot error';
+      modelStatusText.textContent = `${language} model download stalled`;
+      modelInfo.textContent = 'Use Retry in the subtitle panel, or click the NRK page. If it keeps stalling, restart the browser.';
+      break;
+
     case 'unavailable':
-      modelStatusDot.className = 'model-status-dot error';
+      modelStatusDot.className = 'dot error';
       modelStatusText.textContent = `${language} is not supported`;
       modelInfo.textContent = 'Your browser cannot translate into this language.';
       break;
@@ -121,10 +117,10 @@ function applyModelStatus(
     default:
       // Never seen this pair before. It downloads by itself on first use, so this
       // is information rather than an instruction.
-      modelStatusDot.className = 'model-status-dot idle';
+      modelStatusDot.className = 'dot idle';
       modelStatusText.textContent = `${language} model not downloaded yet`;
       modelInfo.textContent =
-        'Pause and play the video again (or click the page) to start the download.';
+        'It downloads once, the first time you click anywhere on an NRK TV page.';
       break;
   }
 }
@@ -139,12 +135,6 @@ chrome.runtime.onMessage.addListener((message: any) => {
 });
 
 // Event listeners
-toggleEnabled.addEventListener('change', async () => {
-  await storage.set('enabled', toggleEnabled.checked);
-  const settings = await storage.getAll();
-  updateUI(settings);
-});
-
 targetLanguage.addEventListener('change', async () => {
   await storage.set('targetLanguage', targetLanguage.value);
   const settings = await storage.getAll();
@@ -153,14 +143,15 @@ targetLanguage.addEventListener('change', async () => {
   renderModelStatus(settings);
 });
 
-translationEngine.addEventListener('change', async () => {
-  await storage.set('translationEngine', translationEngine.value);
-  const settings = await storage.getAll();
-  renderModelStatus(settings);
-});
-
 openSettings.addEventListener('click', () => {
   chrome.runtime.openOptionsPage();
+});
+
+// Follow changes made elsewhere, e.g. from NRK's subtitle menu
+chrome.storage.onChanged.addListener((_changes, areaName) => {
+  if (areaName === 'sync') {
+    storage.getAll().then(updateUI);
+  }
 });
 
 // Initialize
