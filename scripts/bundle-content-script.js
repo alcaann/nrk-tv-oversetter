@@ -12,14 +12,20 @@ const distPath = path.join(__dirname, '..', 'dist');
 const files = [
   'utils/Logger.js',
   'core/interfaces/IStorageService.js',
-  'core/interfaces/ISubtitleProcessor.js',
   'core/interfaces/ITranslationEngine.js',
   "core/modelStatus.js",
   "core/languages.js",
   'core/translation/TranslatorEngine.js',
   'core/translation/TranslationEngineFactory.js',
   'utils/StorageService.js',
-  'content/SubtitleProcessor.js',
+  'utils/subtitleLog.js',
+  'content/captions/types.js',
+  'content/captions/TextTrackSource.js',
+  'content/captions/DomSource.js',
+  'content/captions/CaptionTracker.js',
+  'content/translation/TranslationQueue.js',
+  'content/ui/OverlayRenderer.js',
+  'content/ui/HistoryPanel.js',
   'content/subtitle-injector.js'
 ];
 

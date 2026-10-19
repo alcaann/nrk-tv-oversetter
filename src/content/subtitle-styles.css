@@ -1,27 +1,33 @@
-/* Styles for translated subtitles */
+/* Translated line drawn over the video (OverlayRenderer) */
 
 .nrk-oversetter-translation {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 90%;
+  z-index: 2;
+  pointer-events: none;
+  white-space: pre-line;
+  text-align: center;
+  color: #ffd700;
   font-family: Arial, sans-serif;
   font-weight: bold;
   line-height: 1.4;
   padding: 2px 8px;
   background: rgba(0, 0, 0, 0.6);
   border-radius: 4px;
-  display: inline-block;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
-/* Animation for new subtitles */
-.nrk-oversetter-translation {
-  animation: fadeIn 0.3s ease-in;
+/*
+ * Hide NRK's own subtitles without switching them off. The track keeps loading
+ * and its cues keep flowing to the history panel; only the painting stops.
+ */
+html.nrk-ov-hide-native tv-player-subtitles {
+  visibility: hidden !important;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Make room for the history panel instead of covering the page */
+html.nrk-ov-panel-open body {
+  margin-right: var(--nrk-ov-panel-width, 360px) !important;
 }

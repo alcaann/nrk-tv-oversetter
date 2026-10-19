@@ -63,8 +63,11 @@ async function loadSettings() {
 async function saveSettings() {
   const position = positionBelow.checked ? 'below' : 'above';
 
+  // Merge into the stored settings so anything this page does not edit (the
+  // enabled flag, the in-page panel's toggles) is preserved
+  const currentSettings = await storage.getAll();
   const settings: ExtensionSettings = {
-    enabled: true, // Keep current enabled state
+    ...currentSettings,
     sourceLanguage: sourceLanguage.value,
     targetLanguage: targetLanguage.value,
     translationEngine: translationEngine.value as any,
@@ -74,10 +77,6 @@ async function saveSettings() {
     fontSize: parseInt(fontSize.value),
     showOriginal: showOriginal.checked
   };
-
-  // Merge with existing settings to preserve 'enabled' state
-  const currentSettings = await storage.getAll();
-  settings.enabled = currentSettings.enabled;
 
   await storage.saveAll(settings);
 
