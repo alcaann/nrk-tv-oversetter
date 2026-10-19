@@ -33,6 +33,8 @@ Edge shipped the Translator API to **stable in Edge 148**. Earlier Edge versions
 - Translation size that scales with NRK's own subtitles, so it stays in proportion in fullscreen and on small windows — or a fixed pixel size if you prefer
 - Models download automatically, with live progress in the popup
 - Works offline once the language model has downloaded
+- **Caption history side panel**: every Norwegian line so far, with the translation hidden until you hover it. Hovering the panel pauses the video and leaving resumes it, and clicking a timestamp replays that line
+- Works with NRK's own subtitles hidden or switched off: the captions are still captured
 - Live subtitle log for debugging detection issues
 
 > **Missing a language?** The list comes from your browser, so if something is absent your browser cannot translate into it yet. Edge 148+ supports considerably more than Chrome. [Open an issue](https://github.com/alcaann/nrk-tv-oversetter/issues/new/choose) if something looks wrong.
@@ -92,7 +94,10 @@ Then load the unpacked extension: `chrome://extensions` (or `edge://extensions`)
 
 | Path | Responsibility |
 | --- | --- |
-| [src/content/SubtitleProcessor.ts](src/content/SubtitleProcessor.ts) | Subtitle detection and processing |
+| [src/content/captions/](src/content/captions/) | Caption capture from NRK's subtitle track |
+| [src/content/translation/](src/content/translation/) | Translation queue (ahead of the playhead) |
+| [src/content/ui/](src/content/ui/) | History side panel and on-video translation |
+| [tools/harness/](tools/harness/) | Real-Chrome test harness against tv.nrk.no |
 | [src/core/translation/](src/core/translation/) | Translation engines (factory pattern) |
 | [src/core/interfaces/](src/core/interfaces/) | Interfaces for extensibility |
 | [src/ui/](src/ui/) | Popup and options pages |
@@ -101,12 +106,7 @@ Then load the unpacked extension: `chrome://extensions` (or `edge://extensions`)
 
 ## How it works
 
-NRK builds their player with Lit, which updates subtitle text in ways a `MutationObserver` alone can miss. Detection therefore uses two mechanisms together:
-
-- **MutationObserver** on the subtitle container, for DOM changes
-- **500 ms polling** as a fallback, for text updates that fire no mutation
-
-The primary selector is `span[class*="subtitle"]`, with fallbacks. Translation then goes through the browser's built-in Translator API, which runs entirely on-device.
+NRK's player loads subtitles into a native `TextTrack` on the video and paints the active cue itself. The extension reads that track directly, so it gets exact timings and lines ahead of time, and keeps working with NRK's subtitles hidden or switched off. Captions are translated ahead of the playhead with the browser's built-in Translator API, entirely on-device, and shown in a history side panel and (optionally) on the video.
 
 See [docs/CAPTION_DETECTOR.md](docs/CAPTION_DETECTOR.md) for detection details.
 
@@ -124,7 +124,7 @@ See [docs/CAPTION_DETECTOR.md](docs/CAPTION_DETECTOR.md) for detection details.
 **Subtitles not being detected?**
 - NRK may have changed their HTML structure
 - [Open an issue](https://github.com/alcaann/nrk-tv-oversetter/issues/new/choose) — include the video you were watching
-- To fix it yourself, update the selectors in [SubtitleProcessor.ts](src/content/SubtitleProcessor.ts#L129-L152)
+- The panel footer shows which caption source is active; see [docs/CAPTION_DETECTOR.md](docs/CAPTION_DETECTOR.md) and run `npm run harness:scenarios`
 
 ## Privacy
 

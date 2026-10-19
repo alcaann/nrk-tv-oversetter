@@ -1,122 +1,70 @@
-# Caption Detection System
+# Caption Capture
 
-## How It Works
+## What NRK actually does
 
-The subtitle detection system uses a **dual approach** to reliably capture NRK TV subtitles:
+NRK's player loads subtitles into a **native `TextTrack`** on the `<video>`
+(kind `subtitles`, language `no`, mode `hidden`) from segmented WebVTT, then
+paints the active cue itself into `<tv-player-subtitles>` →
+`span.tv-player-subtitle-text` (a Lit template).
 
-### 1. MutationObserver (Primary)
-Watches for DOM changes in the subtitle container and processes:
-- `childList` mutations: New subtitle elements added
-- `characterData` mutations: Text content changes
-- `attributes` mutations: Attribute changes
+Consequences:
 
-### 2. Polling Fallback (500ms interval)
-**Why polling?** NRK uses the Lit web framework which can update text content without triggering MutationObserver events. The polling mechanism:
-- Re-queries the subtitle container every 500ms
-- Compares current text with last known text
-- Detects changes that MutationObserver missed
-- Clears the processed cache when text changes
+- Cues are available **with exact timings**, and well ahead of the playhead
+  (often 100+ lines at the start of an episode).
+- Hiding NRK's rendering does not stop the cues: `visibility: hidden` on
+  `tv-player-subtitles` is enough.
+- When the viewer picks **Av** (off) in NRK's menu, every track becomes
+  `disabled` and nothing loads. Setting the Norwegian track back to `hidden`
+  makes the player fetch it again, even across seeks.
+- NRK remembers the menu choice in `localStorage["nrk-tv-preferred-subtitle"]`
+  (`"none"` or a track label).
+- NRK inserts a cue `Valgt undertekst: Norsk` when subtitles are switched on.
+  It is a UI notice, not dialogue, and is filtered out.
+- The playback manifest
+  (`psapi.nrk.no/playback/manifest/program/<id>` → `playable.subtitles[].webVtt`)
+  also links the complete VTT file, CORS-open to tv.nrk.no. Not used yet; it is
+  the option if a whole-episode transcript is ever wanted up front.
 
-## Subtitle Container Selectors
+## Sources
 
-The detector searches for subtitle containers using these selectors (in priority order):
+Implemented in [src/content/captions/](../src/content/captions/):
 
-```typescript
-const possibleSelectors = [
-  'span[class*="subtitle"]',  // NRK subtitle span (most specific)
-  '.nrk-subtitle',
-  '.video-subtitle',
-  '.vjs-text-track-display',
-];
-```
+| Source | When | Notes |
+| --- | --- | --- |
+| `TextTrackSource` | The video has a subtitle track (normal case) | Follows the track NRK uses; if none is enabled, forces the Norwegian one (not the audio-described one) to `hidden` and reports `forced` |
+| `DomSource` | No subtitle track after 8 s | Polls the rendered line every 250 ms; approximate timings, nothing ahead of the playhead |
 
-**If NRK changes their website**, update this array in [`src/content/SubtitleProcessor.ts`](../src/content/SubtitleProcessor.ts) line ~131.
+`CaptionTracker` re-finds the `<video>` every second (tv.nrk.no is a single-page
+app), resets on a new program (`loadstart` with a new `currentSrc`), picks the
+source, and keeps the ordered timeline that the panel and translation queue
+subscribe to.
 
-## Flow Diagram
+## If NRK changes their player
 
-```
-┌─────────────────────────────────────────────────┐
-│ 1. Page Load                                    │
-│    └─> Initialize SubtitleProcessor             │
-└─────────────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────────────┐
-│ 2. Find Subtitle Container                      │
-│    └─> Query selectors every 2s until found     │
-└─────────────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────────────┐
-│ 3. Start Dual Detection                         │
-│    ├─> MutationObserver (DOM changes)           │
-│    └─> Polling (text comparison, 500ms)         │
-└─────────────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────────────┐
-│ 4. Process Subtitle                             │
-│    ├─> Extract original text only               │
-│    ├─> Check if already processed (cache)       │
-│    ├─> Translate via TranslationEngine          │
-│    └─> Inject translation element               │
-└─────────────────────────────────────────────────┘
-```
+1. Run `npm run harness:scenarios` ([tools/harness/](../tools/harness/README.md)).
+   The footer of the panel shows which source is active.
+2. If the source fell back to `dom`, NRK stopped using a native track: inspect
+   `video.textTracks` in the console.
+3. If `dom` finds nothing either, update `SUBTITLE_SELECTORS` in
+   [DomSource.ts](../src/content/captions/DomSource.ts).
+4. If NRK's subtitles show through while hidden, update the `tv-player-subtitles`
+   selector in [subtitle-styles.css](../src/content/subtitle-styles.css).
 
-## Key Implementation Details
+## Issues found in the previous DOM-scraping detector
 
-### Duplicate Prevention
-- **Cache**: `Set<string>` tracking processed subtitles by `tagName-fullText`
-- **Cache clearing**: Cleared on ANY text change (ensures new subtitles are processed)
-- **Translation element filtering**: Ignores elements with class `nrk-oversetter-translation`
+The harness ran the old `SubtitleProcessor` through the same scenarios. It was
+more robust than expected (no lingering or duplicated translations), but:
 
-### Text Extraction
-```typescript
-// Clone element to avoid modifying DOM
-const clone = element.cloneNode(true) as HTMLElement;
-
-// Remove our translation elements from clone
-const translationElements = clone.querySelectorAll('.nrk-oversetter-translation');
-translationElements.forEach(el => el.remove());
-
-// Get only original text
-return clone.textContent?.trim() || '';
-```
-
-### Polling Re-query Strategy
-The container is **re-queried on every poll** (not cached) because NRK may replace subtitle elements. This ensures we always process the live subtitle container.
-
-## Debugging
-
-To debug subtitle detection:
-
-1. Open NRK TV console (F12)
-2. Watch for logs:
-   - `"Subtitle container found"` - Container detected
-   - `"Waiting for video with subtitles"` - Container not found (still searching)
-3. Check Options page live log viewer for subtitle processing events
-
-## Common Issues & Solutions
-
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| Subtitles not detected | Selector doesn't match NRK's HTML | Update `possibleSelectors` array |
-| Only first subtitle translated | Cache not clearing | Check polling is running, verify text comparison logic |
-| Duplicate translations | Same subtitle processed multiple times | Check cache logic, ensure `lastSubtitleText` is initialized |
-| Shadow DOM warning | NRK using web components | MutationObserver may not penetrate shadow DOM - polling will handle it |
-
-## Files Involved
-
-- **[`src/content/SubtitleProcessor.ts`](../src/content/SubtitleProcessor.ts)**: Main detection logic
-  - `findSubtitleContainer()`: Selector matching (~line 129)
-  - `startPolling()`: Polling mechanism (~line 106)
-  - `processSubtitle()`: Processing pipeline (~line 175)
-  - `getOriginalText()`: Text extraction (~line 200)
-
-- **[`src/content/subtitle-injector.ts`](../src/content/subtitle-injector.ts)**: Entry point
-  - Initializes processor when page loads
-  - Handles settings changes (re-initializes processor)
-
-## Performance
-
-- **Polling overhead**: Minimal (500ms interval, simple text comparison)
-- **MutationObserver**: Efficient DOM change detection
-- **Re-querying**: `querySelector()` is fast, negligible overhead
-- **Memory**: Cache limited to 100 entries, old entries auto-removed
+- It relied on NRK's subtitles being **switched on and visible**; with them
+  off it captured nothing, so "hide the Norwegian, keep the captions" was
+  impossible.
+- Translation started only when a line appeared, adding 0.25–0.75 s of lag per
+  line. The track-based pipeline translates ahead, so the measured latency is 0.
+- A seek could briefly show the previous line's translation.
+- The translation element was inserted inside NRK's Lit template, which can
+  re-render over foreign nodes.
+- The first line could be lost while the session was still being created (it
+  was marked processed before translation failed with `AWAITING_USER_GESTURE`).
+- NRK's `Valgt undertekst: Norsk` notice was translated as if it were dialogue.
+- Every settings change tore the processor down and rebuilt it, which would
+  wipe any history.

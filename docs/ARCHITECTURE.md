@@ -8,13 +8,21 @@ nrk-tv-oversetter/
 │   ├── background/
 │   │   └── service-worker.ts          # Background service worker (minimal logic)
 │   ├── content/
-│   │   ├── SubtitleProcessor.ts       # Core subtitle detection & translation (321 LOC)
-│   │   ├── subtitle-injector.ts       # Content script entry point (119 LOC)
-│   │   └── subtitle-styles.css        # Styles for translated subtitle elements
+│   │   ├── subtitle-injector.ts       # Content script entry point: wires the pieces below
+│   │   ├── captions/                  # What is said, and when
+│   │   │   ├── CaptionTracker.ts      # Finds the video, picks a source, keeps the timeline
+│   │   │   ├── TextTrackSource.ts     # Reads cues from the video's subtitle TextTrack
+│   │   │   ├── DomSource.ts           # Fallback: scrapes NRK's rendered line
+│   │   │   └── types.ts               # Caption model and text helpers
+│   │   ├── translation/
+│   │   │   └── TranslationQueue.ts    # Translates ahead of the playhead, cached by text
+│   │   ├── ui/
+│   │   │   ├── HistoryPanel.ts        # Side panel: caption history, hover to reveal, pause on hover
+│   │   │   └── OverlayRenderer.ts     # Translated line on the video
+│   │   └── subtitle-styles.css        # Overlay, native-subtitle hiding, page margin for the panel
 │   ├── core/
 │   │   ├── interfaces/                # TypeScript interfaces for extensibility
 │   │   │   ├── ITranslationEngine.ts  # Translation engine contract
-│   │   │   ├── ISubtitleProcessor.ts  # Subtitle processor contract
 │   │   │   └── IStorageService.ts     # Storage service contract + default settings
 │   │   └── translation/
 │   │       ├── TranslatorEngine.ts            # Built-in Translator API implementation
@@ -25,6 +33,7 @@ nrk-tv-oversetter/
 │   └── utils/
 │       ├── StorageService.ts          # Chrome storage wrapper
 │       └── Logger.ts                  # Logging utility with dev mode toggle
+├── tools/harness/                 # Real-Chrome test harness (see its README)
 ├── scripts/
 │   ├── bundle-content-script.js       # IIFE bundler for content script
 │   └── copy-assets.js                 # Copies HTML/CSS to dist/
@@ -34,39 +43,31 @@ nrk-tv-oversetter/
     └── ARCHITECTURE.md                # This file
 ```
 
-## File Size Analysis
-
-| File | Lines | Status | Notes |
-|------|-------|--------|-------|
-| SubtitleProcessor.ts | 321 | ✅ Good | Core logic, well-structured |
-| options.html | ~130 | ✅ Good | Now uses external CSS |
-| popup.html | ~70 | ✅ Good | Now uses external CSS |
-| options.css | 324 | ✅ Good | Separated for maintainability |
-| popup.css | 185 | ✅ Good | Separated for maintainability |
-
-**Previous state**: options.html (455 LOC) and popup.html (258 LOC) had massive inline `<style>` blocks
-**Current state**: CSS extracted to separate files for better maintainability and LLM context usage
-
 ## Core Components
 
-### 1. SubtitleProcessor (Content Script)
-**File**: [`src/content/SubtitleProcessor.ts`](../src/content/SubtitleProcessor.ts)
+### 1. Caption pipeline (content script)
 
-**Responsibilities**:
-- Detect subtitle elements on NRK TV pages
-- Extract original text (excluding translations)
-- Translate subtitles via TranslationEngine
-- Inject translated subtitle elements into DOM
+```
+CaptionTracker ──captions/active──▶ TranslationQueue ──translations──┐
+      │                                                              ▼
+      └──────────────captions/active/playhead──────────▶ HistoryPanel, OverlayRenderer
+```
 
-**Detection Strategy** (see [CAPTION_DETECTOR.md](CAPTION_DETECTOR.md)):
-- **MutationObserver**: Primary detection for DOM changes
-- **Polling (500ms)**: Fallback for Lit framework updates that bypass MutationObserver
-- **Re-querying**: Container re-queried each poll to handle NRK replacing elements
-
-**Key Methods**:
-- `findSubtitleContainer()`: Selector matching (update here if NRK changes HTML)
-- `processSubtitle()`: Translation pipeline
-- `getOriginalText()`: Filters out translation elements
+- **CaptionTracker** owns the timeline. It reads NRK's subtitle `TextTrack`
+  (`TextTrackSource`), forcing it on in the background if the viewer has
+  subtitles off, and falls back to scraping the page (`DomSource`). See
+  [CAPTION_DETECTOR.md](CAPTION_DETECTOR.md).
+- **TranslationQueue** translates captions nearest the playhead first, up to 60 s
+  ahead, so translations are ready before the line is spoken. It parks until a
+  click if Chrome needs a user gesture to download the model.
+- **HistoryPanel** (shadow DOM) lists every line spoken so far: Norwegian
+  visible, translation blurred until hovered. Pointer in the panel pauses the
+  video, leaving resumes it. Timestamps seek. Moves into the fullscreen element in
+  fullscreen.
+- **OverlayRenderer** draws the translation on the video as our own child of
+  `<tv-player>`, never inside NRK's Lit template.
+- Settings are applied in place (`Controller.updateSettings`); the panel writes
+  settings itself, so tearing down on change would lose the history.
 
 ### 2. TranslatorEngine
 **File**: [`src/core/translation/TranslatorEngine.ts`](../src/core/translation/TranslatorEngine.ts)
@@ -105,8 +106,11 @@ const result = await session.translate(text);
   targetLanguage: string,       // Default: 'en' (English)
   translationEngine: string,    // Default: 'edge'
   position: 'above' | 'below',  // Default: 'below'
-  fontSize: number,             // Default: 20
-  showOriginal: boolean         // Default: true (not implemented)
+  fontSizeMode, fontSizeScale, fontSize,
+  showOriginal: boolean,        // NRK's Norwegian subtitles on the video
+  showTranslation: boolean,     // Translated line on the video
+  panelEnabled: boolean,        // History panel open (collapsed to a tab otherwise)
+  pauseOnHover: boolean         // Pause while the pointer is over the panel
 }
 ```
 
@@ -127,40 +131,13 @@ const result = await session.translate(text);
 
 ## Data Flow
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ 1. User visits tv.nrk.no                                    │
-│    └─> Content script (subtitle-injector.ts) loads          │
-│        └─> Initializes SubtitleProcessor                    │
-└─────────────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────────┐
-│ 2. SubtitleProcessor starts detection                       │
-│    ├─> MutationObserver watches subtitle container          │
-│    └─> Polling checks text changes every 500ms              │
-└─────────────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────────┐
-│ 3. Subtitle detected                                         │
-│    ├─> Extract original text (filter out translations)      │
-│    ├─> Check cache (avoid re-processing)                    │
-│    └─> Send log to Options page (if open)                   │
-└─────────────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────────┐
-│ 4. TranslationEngine.translate()                             │
-│    ├─> Get/create session for language pair                 │
-│    ├─> Call session.translate(text)                         │
-│    └─> Return translated text                               │
-└─────────────────────────────────────────────────────────────┘
-                          ↓
-┌─────────────────────────────────────────────────────────────┐
-│ 5. Inject translation into DOM                               │
-│    ├─> Create <div class="nrk-oversetter-translation">      │
-│    ├─> Position above/below original                        │
-│    └─> Send completion log to Options page                  │
-└─────────────────────────────────────────────────────────────┘
-```
+1. The content script loads on tv.nrk.no and starts a `Controller` (if enabled).
+2. `CaptionTracker` finds the player's `<video>` and reads its subtitle track;
+   new cues are added to the timeline as the player loads them.
+3. `TranslationQueue` translates them, nearest the playhead first.
+4. On each `timeupdate` the panel reveals lines whose start has been reached;
+   `cuechange` marks the active line and updates the on-video translation.
+5. The options page's live log still receives `SUBTITLE_LOG` messages.
 
 ## Build Process
 
@@ -187,12 +164,15 @@ npm run bundle-content
 
 **Bundle order** (dependencies first):
 1. Logger.js
-2. Interfaces (IStorageService, ISubtitleProcessor, ITranslationEngine)
+2. Interfaces (IStorageService, ITranslationEngine)
 3. TranslatorEngine.js
 4. TranslationEngineFactory.js
 5. StorageService.js
-6. SubtitleProcessor.js
+6. content/captions/*, content/translation/*, content/ui/*
 7. subtitle-injector.js (entry point)
+
+The bundler strips `import`/`export` and concatenates into one scope, so imports
+must stay on one line and top-level names must be unique across files.
 
 ### Full Build
 ```bash
@@ -217,7 +197,7 @@ Runs: `tsc && npm run copy-assets && npm run bundle-content`
 **TranslationEngineFactory**: Allows easy swapping of translation engines (Edge Translator API, Google Translate, DeepL, custom)
 
 ### 2. Interface Segregation
-All core components implement interfaces (`ITranslationEngine`, `ISubtitleProcessor`, `IStorageService`) for:
+Core services implement interfaces (`ITranslationEngine`, `IStorageService`, `CaptionSource`) for:
 - Testability
 - Extensibility
 - Clear contracts
@@ -268,14 +248,7 @@ case 'my-engine':
 }]
 ```
 
-2. **Update selectors** in `SubtitleProcessor.findSubtitleContainer()`:
-```typescript
-const possibleSelectors = [
-  'span[class*="subtitle"]',  // NRK
-  '.newsite-caption',         // New site
-  ...
-];
-```
+2. **Add a caption source** implementing `CaptionSource` ([types.ts](../src/content/captions/types.ts)) and choose it in `CaptionTracker.watch()`. Prefer reading the site's `TextTrack` if it has one.
 
 ## Debugging Tips
 
@@ -324,14 +297,9 @@ See [CAPTION_DETECTOR.md](CAPTION_DETECTOR.md) "Common Issues & Solutions" secti
 ## Future Improvements
 
 ### Potential Refactoring
-- **SubtitleProcessor**: Could be split into smaller classes:
-  - `SubtitleDetector` (MutationObserver + polling)
-  - `SubtitleTranslator` (translation pipeline)
-  - `SubtitleRenderer` (DOM injection)
 - **UI components**: Consider using a small framework (Preact, Svelte) for better state management
 
 ### Feature Ideas
-- Translation caching (avoid re-translating seen subtitles)
 - Keyboard shortcuts (toggle on/off)
 - Custom subtitle styling
 - Export/import settings

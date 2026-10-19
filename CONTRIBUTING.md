@@ -31,7 +31,7 @@ Load the unpacked extension:
 
 ## Testing a change
 
-There is no automated test suite yet, so changes are verified by hand:
+`npm run harness:scenarios` drives real Chrome with the extension against live tv.nrk.no and checks captions, translations and the panel against the video's subtitle track; see [tools/harness/README.md](tools/harness/README.md). Beyond that, verify by hand:
 
 1. Open a video on [tv.nrk.no](https://tv.nrk.no) with Norwegian subtitles turned on
 2. Confirm translations appear below the original subtitles
@@ -53,7 +53,9 @@ Small, focused pull requests are easier to review than large ones. If you are pl
 
 | Path | Responsibility |
 | --- | --- |
-| [src/content/SubtitleProcessor.ts](src/content/SubtitleProcessor.ts) | Subtitle detection, translation, and DOM injection |
+| [src/content/captions/](src/content/captions/) | Caption capture (subtitle track, DOM fallback) |
+| [src/content/translation/](src/content/translation/) | Translation queue |
+| [src/content/ui/](src/content/ui/) | History panel and on-video translation |
 | [src/content/subtitle-injector.ts](src/content/subtitle-injector.ts) | Content script entry point and message handling |
 | [src/core/translation/](src/core/translation/) | Translation engines behind a factory |
 | [src/core/interfaces/](src/core/interfaces/) | Interfaces — implement these to extend the extension |
@@ -64,7 +66,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the fuller picture.
 
 ## Two things worth knowing
 
-**Subtitle detection is fragile by nature.** NRK controls the page, and when they change their markup the selectors in [SubtitleProcessor.ts](src/content/SubtitleProcessor.ts#L129-L152) stop matching. This is the most common way the extension breaks, and it is usually a small fix. [docs/CAPTION_DETECTOR.md](docs/CAPTION_DETECTOR.md) explains how detection works.
+**NRK controls the page.** Captions are read from the video's subtitle track rather than scraped, which survives markup changes, but a player rewrite can still break capture or the hiding of NRK's own subtitles. `npm run harness:scenarios` shows which. [docs/CAPTION_DETECTOR.md](docs/CAPTION_DETECTOR.md) explains how detection works.
 
 **Translation is on-device and stays that way.** The extension uses the browser's built-in Translator API specifically so that nothing a user watches is sent anywhere. Please do not add a cloud translation provider as a default. An opt-in, clearly-disclosed fallback is a reasonable discussion to have in an issue first — a silent one is not.
 
