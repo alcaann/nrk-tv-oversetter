@@ -35,3 +35,6 @@ yarn-error.log*
 
 # Store-listing screenshot masters (optimized copies live in docs/assets/)
 Screenshot_*.png
+
+# Test harness browser profile
+.harness/
