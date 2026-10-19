@@ -135,6 +135,16 @@ The model download status reaches the page UI through `onLocalModelStatus()`
 `chrome.storage.local` plus a broadcast. `TranslatorEngine` abandons a download
 that makes no progress for 90 s (180 s after reaching 100%) and reports
 `stalled`, so a click can retry instead of every translation waiting forever.
+Concurrent `prepare()` calls for a pair share one attempt: a single click reaches
+both the page-wide gesture listener and the Download button, and a second
+`Translator.create()` fails (the first used the activation) and used to tear down
+the download in flight. Other creation errors are reported as `failed` with the
+browser's message, rather than asking for yet another click.
+
+**First run:** fresh installs start with `enabled: false, onboarded: false`, so
+NRK is untouched until the viewer opts in. `FirstRunPrompt` then shows a card on
+the player; choosing a mode there (or in NRK's menu) starts the model download
+inside that click, which is the user activation Chrome requires.
 
 ## Data Flow
 

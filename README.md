@@ -43,9 +43,9 @@ Edge shipped the Translator API to **stable in Edge 148**. Earlier Edge versions
 
 ## Usage
 
-1. Open [tv.nrk.no](https://tv.nrk.no) and start a video with Norwegian subtitles enabled
-2. Pick a mode: **Dual subtitles** (translation under the Norwegian, on the video) or **Learning panel** (history on the side, translation on hover). From the extension icon, or in NRK's subtitle menu under *Oversetter*
-3. The first time, the translation model downloads once: click **Download now** (or anywhere on the page)
+1. Open [tv.nrk.no](https://tv.nrk.no) and start a video. The first time, a card on the player offers the two modes; picking one also starts the one-time model download
+2. To change it later, pick a mode: **Dual subtitles** (translation under the Norwegian, on the video) or **Learning panel** (history on the side, translation on hover). From the extension icon, or in NRK's subtitle menu under *Oversetter*
+3. If the model ever needs downloading again (e.g. after changing language), a **Download now** button appears in the panel or on the video
 
 Settings: right-click the extension icon → **Options**.
 
