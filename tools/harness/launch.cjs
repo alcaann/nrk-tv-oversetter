@@ -44,6 +44,8 @@ async function launch({
     'about:blank',
   ];
   if (headless) args.unshift('--headless=new');
+  // e.g. EXTRA_ARGS="--enable-features=Foo" to try browser switches
+  if (process.env.EXTRA_ARGS) args.unshift(...process.env.EXTRA_ARGS.split(' ').filter(Boolean));
 
   const proc = spawn(binary, args, { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });
   const toChrome = proc.stdio[3];
