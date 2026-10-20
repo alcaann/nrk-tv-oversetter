@@ -55,4 +55,12 @@ html.nrk-ov-hide-native tv-player-subtitles {
 /* Make room for the history panel instead of covering the page */
 html.nrk-ov-panel-open body {
   margin-right: var(--nrk-ov-panel-width, 360px) !important;
+  /* In step with the panel's slide-in */
+  transition: margin-right 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.nrk-ov-panel-open body {
+    transition: none;
+  }
 }

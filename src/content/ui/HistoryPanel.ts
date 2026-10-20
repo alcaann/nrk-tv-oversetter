@@ -27,6 +27,10 @@ const STYLES = `
   font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 .panel[hidden] { display: none; }
+/* Slides in as the page makes room for it (subtitle-styles.css) */
+.panel { animation: slide-in .3s cubic-bezier(.2, .7, .2, 1); }
+@keyframes slide-in { from { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .panel { animation: none; } }
 header {
   display: flex; align-items: center; gap: 6px; padding: 10px 12px;
   border-bottom: 1px solid #2a2a2a; flex: none;
@@ -317,6 +321,7 @@ export class HistoryPanel {
   private applySettings(): void {
     const present = this.video !== null && this.settings.mode === 'learning';
     const open = present && !this.settings.panelCollapsed;
+    const opening = open && this.panel.hidden;
     this.panel.hidden = !open;
     this.tab.hidden = !present || open;
     document.documentElement.style.setProperty('--nrk-ov-panel-width', `${PANEL_WIDTH}px`);
@@ -326,6 +331,11 @@ export class HistoryPanel {
     }
     if (!open) {
       this.resumeIfWePaused();
+    }
+    // A hidden list cannot scroll, so it would open at the top of the episode
+    if (opening) {
+      this.detached = false;
+      this.followPlayhead();
     }
   }
 
