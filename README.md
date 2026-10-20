@@ -7,7 +7,7 @@ Watch [NRK TV](https://tv.nrk.no) in Norwegian, with the translation one glance 
 
 ![Setting it up: choose a mode on the player, switch modes from NRK's subtitle menu, and hover lines in the learning panel](docs/tutorial/tutorial.gif)
 
-*One-minute walkthrough. [Full-quality video (MP4)](docs/tutorial/tutorial.mp4)*
+*One-minute walkthrough. [Watch on YouTube](https://www.youtube.com/watch?v=ma1ASG3NGM8) or [download the MP4](docs/tutorial/tutorial.mp4)*
 
 ## Two ways to watch
 
