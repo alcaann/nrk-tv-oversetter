@@ -117,6 +117,10 @@ See [docs/CAPTION_DETECTOR.md](docs/CAPTION_DETECTOR.md) for detection details.
 - Download the translation model from the popup first
 - Refresh the NRK TV page after enabling the extension
 
+**"Could not load the model" on Edge?**
+- On Edge 148 for Linux we have seen the built-in translator fail for every language pair (`NotSupportedError: Unable to create translator`), including pairs unrelated to Norwegian, so it is not something the extension can fix
+- Check with Microsoft's [Translator API playground](https://microsoftedge.github.io/Demos/built-in-ai/playgrounds/translator-api/): if that fails too, use Chrome
+
 **Model download stuck or failing?**
 - Restart the browser and try again — this is a known quirk of the built-in model download
 - Check the browser console (F12) for errors

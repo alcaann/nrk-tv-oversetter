@@ -34,14 +34,22 @@ export function describeStatus(status: TranslationStatus, language: string): Sta
         text: `The ${language} model download stopped making progress. If retrying does not help, restart the browser.`,
         action: 'Retry',
       };
-    case 'failed':
-      return {
-        text: `The browser could not load the ${language} model${status.error ? ` (${status.error.replace(/\.$/, '')})` : ''}. Try again; if it keeps failing, restart the browser.`,
-        action: 'Retry',
-      };
+    case 'failed': {
+      const detail = status.error ? ` (${status.error.replace(/\.$/, '')})` : '';
+      // Seen on Edge 148 for Linux: every language pair fails, German-English
+      // included, so retrying here cannot help. Say so instead of looping.
+      const hint = isEdge()
+        ? " If Microsoft's own Translator playground fails too, Edge's translator does not work on this device; Chrome does."
+        : ' Try again; if it keeps failing, restart the browser.';
+      return { text: `The browser could not load the ${language} model${detail}.${hint}`, action: 'Retry' };
+    }
     case 'unavailable':
       return { text: `Your browser cannot translate Norwegian into ${language}.` };
   }
+}
+
+function isEdge(): boolean {
+  return navigator.userAgent.includes('Edg/');
 }
 
 /** Short form, for a translation that is not there yet */
