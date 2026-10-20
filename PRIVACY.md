@@ -1,6 +1,6 @@
 # Privacy Policy for NRK TV Oversetter
 
-**Last Updated:** February 1, 2026
+**Last Updated:** October 20, 2026
 
 ## Overview
 
@@ -10,23 +10,24 @@ NRK TV Oversetter is a browser extension that translates Norwegian subtitles on 
 
 ### What Data We Collect
 
-1. **User Preferences (Stored Locally)**
+1. **User Preferences**
+   - Display mode (dual subtitles or learning panel) and whether the extension is on
    - Target translation language
-   - Font size settings
-   - Subtitle position preferences
-   - Extension enabled/disabled state
+   - Translation size and position, and the learning panel's options
+   - Whether the first-run setup card has been answered
 
 2. **Website Content**
    - Subtitle text from NRK TV videos (read in real-time for translation purposes only)
+   - NRK's own subtitle on/off choice, which NRK TV saves on the page; it is read, never changed or sent, so that NRK's subtitles are only shown on the video when you have them switched on
 
 ### How We Use Your Data
 
-- **User Preferences**: Stored locally on your device using Chrome's storage API to remember your settings between browsing sessions
+- **User Preferences**: Saved with Chrome's extension storage to remember your settings between browsing sessions. If you use Chrome Sync, Chrome syncs them to your other devices through your Google account, like any extension's settings
 - **Subtitle Text**: Read from NRK TV pages and processed through Chrome's built-in Translator API for real-time translation. This data is not stored, logged, or transmitted to any external servers.
 
 ## Data Storage
 
-All user data is stored **locally on your device** using Chrome's secure storage mechanism. We do not use remote servers, databases, or cloud storage.
+Your preferences are kept in Chrome's extension storage (synced by Chrome itself if you use Chrome Sync). The extension has no servers, databases or cloud storage of its own, and the subtitle text it reads is never stored.
 
 ## Data Sharing
 
@@ -48,12 +49,12 @@ The extension uses Chrome's built-in Translator API for translation services. Tr
 
 The extension requires the following permissions:
 
-- **storage**: To save your preferences (language, font size, position) locally on your device
+- **storage**: To save your preferences (mode, language, translation size and position)
 - **host permission (*.nrk.no/*)**: To access subtitle elements on NRK TV pages for translation
 
 ## Data Retention
 
-- **User Preferences**: Retained locally until you uninstall the extension or clear your browser data
+- **User Preferences**: Kept until you uninstall the extension or clear your browser data
 - **Subtitle Text**: Not retained; processed in real-time and immediately discarded after translation
 
 ## Your Rights

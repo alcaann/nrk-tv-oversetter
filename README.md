@@ -1,75 +1,112 @@
 # NRK TV Oversetter
 
-Translate Norwegian subtitles on [NRK TV](https://tv.nrk.no) in real-time, using the translation model built into your browser. Nothing you watch leaves your device.
+Watch [NRK TV](https://tv.nrk.no) in Norwegian, with the translation one glance away. Translation runs on your own computer, using the model built into your browser: nothing you watch leaves your device.
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/nrk-tv-oversetter/hlnikafacjiekphhloakkbhokhfkpcem)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-![Norwegian subtitles with English translation shown below them on NRK TV](docs/assets/dual-subtitles.jpg)
+![Setting it up: choose a mode on the player, switch modes from NRK's subtitle menu, and hover lines in the learning panel](docs/tutorial/tutorial.gif)
+
+*One-minute walkthrough. [Full-quality video (MP4)](docs/tutorial/tutorial.mp4)*
+
+## Two ways to watch
+
+| | |
+| --- | --- |
+| **Dual subtitles**<br>The translation sits under NRK's Norwegian subtitle, on the video. Good for following along, and it works in fullscreen. | **Learning panel**<br>Every Norwegian line so far, in a panel beside the video. The translation stays hidden until you hover a line, and the video pauses while you read. |
 
 ## Install
 
-| Browser | Status |
-| --- | --- |
-| **Chrome** | [Chrome Web Store](https://chromewebstore.google.com/detail/nrk-tv-oversetter/hlnikafacjiekphhloakkbhokhfkpcem) |
-| **Edge** | Coming soon — Edge Add-ons submission pending |
+Get it from the [Chrome Web Store](https://chromewebstore.google.com/detail/nrk-tv-oversetter/hlnikafacjiekphhloakkbhokhfkpcem). It is free, with no account and no API key.
 
-## Browser support
+## Getting started
 
-Translation runs on the browser's built-in [Translator API](https://developer.chrome.com/docs/ai/translator-api), so support depends on your browser version:
+### 1. Open any program on tv.nrk.no
 
-| Browser | Minimum version | Languages available to the API |
-| --- | --- | --- |
-| Chrome | Stable | 44 |
-| Microsoft Edge | **148+** | 145+ |
+The first time, a card on the player asks how you would like the subtitles. Until you choose, NRK stays exactly as it was.
 
-Edge shipped the Translator API to **stable in Edge 148**. Earlier Edge versions required Canary; that is no longer the case. If you are on Edge, update to 148 or later.
+![The first-run card on the NRK player offering Dual subtitles, Learning panel or Not now](docs/tutorial/01-choose-mode.png)
+
+### 2. Pick a mode
+
+Choosing one also downloads the translation model, once (it then works offline). With **Dual subtitles**, the translation appears under the Norwegian. Each line is translated ahead of time, so it shows up together with the Norwegian.
+
+![Norwegian subtitle with the English translation underneath, on the video](docs/tutorial/02-dual-subtitles.png)
+
+### 3. Change mode at any time from NRK's subtitle menu
+
+Our options sit under **Oversetter**, next to NRK's own subtitle choices, so this works in fullscreen too.
+
+![NRK's subtitle menu with the Oversetter section: Off, Dual subtitles, Learning panel](docs/tutorial/03-nrk-menu.png)
+
+### 4. The learning panel
+
+Every line so far, in Norwegian. NRK's own subtitles are hidden from the video, but the lines keep arriving in the panel. The **NO** and **EN** buttons put either back on the video.
+
+![The learning panel beside the video, with the translations blurred](docs/tutorial/04-learning-panel.png)
+
+### 5. Hover a line you did not catch
+
+Its translation appears, and the video pauses while you read. Move the pointer away and it plays on. Click a line's time to hear it again.
+
+![Hovering a line reveals its English translation](docs/tutorial/05-hover-to-reveal.png)
+
+### 6. Settings
+
+The toolbar icon has the mode, the translation language and the model status. **All settings** has the rest: where the translation goes, its size, and pause on hover.
+
+![The extension popup: mode, language and model status](docs/tutorial/06-popup.png)
 
 ## Features
 
-- Real-time translation of Norwegian subtitles as you watch
-- **Every language your browser supports** — the list is read from the browser at runtime, so it is around 39 on Chrome and 145+ on Edge 148, rather than a fixed list that goes stale
-- Optionally hide the Norwegian original and show only the translation
-- Translation size that scales with NRK's own subtitles, so it stays in proportion in fullscreen and on small windows — or a fixed pixel size if you prefer
-- Models download automatically, with live progress in the popup
-- Works offline once the language model has downloaded
-- **Caption history side panel**: every Norwegian line so far, with the translation hidden until you hover it. Hovering the panel pauses the video and leaving resumes it, and clicking a timestamp replays that line
-- Works with NRK's own subtitles hidden or switched off: the captions are still captured
-- Choose the mode from the popup, the settings page, or **NRK's own subtitle menu** (works in fullscreen)
+- **Two modes**: dual subtitles on the video, or the learning panel with hover-to-reveal and automatic pause
+- **Choose the mode where you watch**: in NRK's own subtitle menu (fullscreen included), the toolbar popup, or the settings page
+- **Ready when the line is spoken**: subtitles are read from NRK's subtitle track ahead of time, and translated before they appear
+- **Works with NRK's subtitles hidden or switched off**: the extension still receives every line
+- **Every language your browser can translate into**, read from the browser itself (around 40 in Chrome)
+- **Private and offline**: translation runs on your device; after the one-time model download it needs no connection
+- Translation size that follows NRK's own subtitle size, in fullscreen and small windows, or a fixed size
+- Replay a line from the panel by clicking its time
 
-> **Missing a language?** The list comes from your browser, so if something is absent your browser cannot translate into it yet. Edge 148+ supports considerably more than Chrome. [Open an issue](https://github.com/alcaann/nrk-tv-oversetter/issues/new/choose) if something looks wrong.
+## Browser support
 
-![Extension settings page](docs/assets/settings-page.png)
+Translation uses the browser's built-in [Translator API](https://developer.chrome.com/docs/ai/translator-api).
 
-## Usage
+| Browser | Status |
+| --- | --- |
+| **Google Chrome** (desktop) | ✅ Works |
+| **Microsoft Edge** on Linux | ❌ Edge's built-in translator does not work on Linux at the moment: it downloads the wrong language packs, and its translation service crashes. Reported to Microsoft as [MSEdgeExplainers#1424](https://github.com/MicrosoftEdge/MSEdgeExplainers/issues/1424). Use Chrome. |
+| **Microsoft Edge** on Windows / macOS | Not yet tested. Edge 148 or later is required. |
 
-1. Open [tv.nrk.no](https://tv.nrk.no) and start a video. The first time, a card on the player offers the two modes; picking one also starts the one-time model download
-2. To change it later, pick a mode: **Dual subtitles** (translation under the Norwegian, on the video) or **Learning panel** (history on the side, translation on hover). From the extension icon, or in NRK's subtitle menu under *Oversetter*
-3. If the model ever needs downloading again (e.g. after changing language), a **Download now** button appears in the panel or on the video
+## Troubleshooting
 
-Settings: right-click the extension icon → **Options**.
+**No translation appears**
+- If the panel or the video shows **Download now**, click it: the browser only downloads a model after a click on the page
+- Reload the NRK tab after installing or updating the extension
 
-## Roadmap
+**"The browser could not load the model"**
+- On Edge for Linux, this is the Edge bug above. Microsoft's own [Translator API playground](https://microsoftedge.github.io/Demos/built-in-ai/playgrounds/translator-api/) fails in the same way. Use Chrome
+- Elsewhere, click **Retry**. If it keeps failing, restart the browser
 
-- [x] Populate the language list dynamically from the browser's Translator API (fixes missing languages such as Arabic)
-- [x] Download progress, shown live in the popup
-- [x] Model status readable without an open NRK tab
-- [ ] Injector health check, to detect and report when NRK changes their page structure
-- [ ] Edge Add-ons release
+**A download is stuck**
+- After 90 seconds without progress the extension gives up and offers **Retry**. Restarting the browser usually helps
 
-## Contributing
+**The panel is empty, or lines stop appearing**
+- NRK may have changed their player. [Open an issue](https://github.com/alcaann/nrk-tv-oversetter/issues/new/choose) with a link to the program. The panel's footer shows which caption source is in use, which helps
 
-Contributions are welcome — this is a small project and pull requests are genuinely appreciated.
+**Missing a language?** The list comes from your browser: if a language is not there, your browser cannot translate into it yet. [Open an issue](https://github.com/alcaann/nrk-tv-oversetter/issues/new/choose) if something looks wrong.
 
-- **Found a bug, or missing a language?** [Open an issue](https://github.com/alcaann/nrk-tv-oversetter/issues/new/choose). Bug reports through the extension store are hard to reply to; GitHub issues let us actually talk it through.
-- **Want to fix something?** Fork, branch, and open a pull request. See [CONTRIBUTING.md](CONTRIBUTING.md) for the build and test loop.
-- **Subtitles stopped being detected?** NRK changes their site occasionally. That's usually a one-line selector fix — see [docs/CAPTION_DETECTOR.md](docs/CAPTION_DETECTOR.md).
+## Privacy
 
-## Store listings
+Subtitles are translated on your device by the browser's built-in model. No subtitle text, browsing history or personal data is transmitted anywhere. See [PRIVACY.md](PRIVACY.md).
 
-Copy for both store listings lives in [store/](store/), kept in the repo so it stays
-in step with the code. Update it whenever the supported languages, download
-behaviour, or browser requirements change.
+This extension is not affiliated with NRK.
+
+## How it works
+
+NRK's player loads the subtitles into a native `TextTrack` on the video and draws the active line itself. The extension reads that track directly, so it has exact timings and the upcoming lines, whatever NRK shows on screen. Lines are translated ahead of the playhead with the browser's Translator API, and drawn on the video, in the panel, or both.
+
+More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/CAPTION_DETECTOR.md](docs/CAPTION_DETECTOR.md).
 
 ## Development
 
@@ -78,61 +115,41 @@ npm install
 npm run build
 ```
 
-Then load the unpacked extension: `chrome://extensions` (or `edge://extensions`) → enable **Developer mode** → **Load unpacked** → select the repo root.
-
-**Commands:**
+Load the unpacked extension: `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select the repo root.
 
 | Command | Purpose |
 | --- | --- |
-| `npm run build` | Full build (TypeScript + assets + bundling) |
+| `npm run build` | TypeScript, assets and the content-script bundle |
 | `npm run watch` | TypeScript in watch mode |
-| `npm run clean` | Remove `dist/` |
-| `npm run copy-assets` | Copy HTML/CSS into `dist/` |
-| `npm run bundle-content` | Bundle the content script |
-
-**Architecture** ([full docs](docs/ARCHITECTURE.md)):
+| `npm run package` | Clean build, zipped for the store into `release/` |
+| `npm run harness:scenarios` | Drive real Chrome with the extension on live tv.nrk.no and check it against NRK's subtitle track ([tools/harness/](tools/harness/README.md)) |
+| `node tools/media/record-tutorial.cjs` | Re-record the walkthrough video, GIF and screenshots in `docs/tutorial/` |
+| `node tools/media/render-store-assets.cjs` | Render the store promo tiles in `store/assets/` |
 
 | Path | Responsibility |
 | --- | --- |
-| [src/content/captions/](src/content/captions/) | Caption capture from NRK's subtitle track |
-| [src/content/translation/](src/content/translation/) | Translation queue (ahead of the playhead) |
-| [src/content/ui/](src/content/ui/) | History side panel and on-video translation |
-| [tools/harness/](tools/harness/) | Real-Chrome test harness against tv.nrk.no |
-| [src/core/translation/](src/core/translation/) | Translation engines (factory pattern) |
-| [src/core/interfaces/](src/core/interfaces/) | Interfaces for extensibility |
-| [src/ui/](src/ui/) | Popup and options pages |
+| [src/content/captions/](src/content/captions/) | Reading NRK's subtitle track (with a page fallback) |
+| [src/content/translation/](src/content/translation/) | Translating ahead of the playhead; model download status |
+| [src/content/ui/](src/content/ui/) | Learning panel, on-video translation, NRK menu section, first-run card |
+| [src/core/](src/core/) | Settings, modes, languages, the translation engine |
+| [src/ui/](src/ui/) | Popup and settings page |
 
-**Adding a translation engine:** implement [ITranslationEngine](src/core/interfaces/ITranslationEngine.ts) and register it in [TranslationEngineFactory.ts](src/core/translation/TranslationEngineFactory.ts). There is no engine selector in the UI while there is only one engine.
+Store listing copy and images live in [store/](store/), so they stay in step with the code. Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
-## How it works
+## Contributing
 
-NRK's player loads subtitles into a native `TextTrack` on the video and paints the active cue itself. The extension reads that track directly, so it gets exact timings and lines ahead of time, and keeps working with NRK's subtitles hidden or switched off. Captions are translated ahead of the playhead with the browser's built-in Translator API, entirely on-device, and shown in a history side panel and (optionally) on the video.
+Contributions are welcome. This is a small project, and pull requests are appreciated.
 
-See [docs/CAPTION_DETECTOR.md](docs/CAPTION_DETECTOR.md) for detection details.
+- **Found a bug, or missing a language?** [Open an issue](https://github.com/alcaann/nrk-tv-oversetter/issues/new/choose). Store reviews are hard to reply to; GitHub issues let us talk it through.
+- **Want to fix something?** See [CONTRIBUTING.md](CONTRIBUTING.md) for the build and test loop.
 
-## Troubleshooting
+## Roadmap
 
-**No translations appearing?**
-- On Edge, confirm you are on version 148 or later (`edge://settings/help`)
-- Download the translation model from the popup first
-- Refresh the NRK TV page after enabling the extension
-
-**"Could not load the model" on Edge?**
-- On Edge 148 for Linux we have seen the built-in translator fail for every language pair (`NotSupportedError: Unable to create translator`), including pairs unrelated to Norwegian, so it is not something the extension can fix
-- Check with Microsoft's [Translator API playground](https://microsoftedge.github.io/Demos/built-in-ai/playgrounds/translator-api/): if that fails too, use Chrome
-
-**Model download stuck or failing?**
-- Restart the browser and try again — this is a known quirk of the built-in model download
-- Check the browser console (F12) for errors
-
-**Subtitles not being detected?**
-- NRK may have changed their HTML structure
-- [Open an issue](https://github.com/alcaann/nrk-tv-oversetter/issues/new/choose) — include the video you were watching
-- The panel footer shows which caption source is active; see [docs/CAPTION_DETECTOR.md](docs/CAPTION_DETECTOR.md) and run `npm run harness:scenarios`
-
-## Privacy
-
-Subtitles are translated on your device by the browser's built-in model. No subtitle text, browsing history, or personal data is transmitted anywhere. See [PRIVACY.md](PRIVACY.md).
+- [x] Language list read from the browser
+- [x] Learning panel with hover-to-reveal and pause on hover
+- [x] Modes in NRK's own subtitle menu
+- [x] First-run setup on the player
+- [ ] Edge Add-ons release, once Edge's translator works ([MSEdgeExplainers#1424](https://github.com/MicrosoftEdge/MSEdgeExplainers/issues/1424))
 
 ## License
 
