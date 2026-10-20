@@ -47,7 +47,9 @@ async function launch({
   // e.g. EXTRA_ARGS="--enable-features=Foo" to try browser switches
   if (process.env.EXTRA_ARGS) args.unshift(...process.env.EXTRA_ARGS.split(' ').filter(Boolean));
 
-  const proc = spawn(binary, args, { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });
+  // BROWSER_LOG=file keeps the browser's stderr, e.g. with EXTRA_ARGS=--enable-logging=stderr
+  const stderr = process.env.BROWSER_LOG ? fs.openSync(process.env.BROWSER_LOG, 'a') : 'ignore';
+  const proc = spawn(binary, args, { stdio: ['ignore', 'ignore', stderr, 'pipe', 'pipe'] });
   const toChrome = proc.stdio[3];
   const fromChrome = proc.stdio[4];
   fromChrome.on('error', () => {});
