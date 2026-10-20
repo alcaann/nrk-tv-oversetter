@@ -10,6 +10,12 @@ export interface OverlayNotice {
 const OVERLAY_CLASS = 'nrk-oversetter-translation';
 const NRK_SUBTITLES = 'tv-player-subtitles';
 const NRK_LINE = '.tv-player-subtitle-text';
+/** Set on NRK's subtitle layer while the controls are showing; it then moves up */
+const NRK_DISPLACED = 'displace-subtitles';
+/** NRK's own distance for that move, which follows the player size */
+const NRK_CONTROLS_HEIGHT = '--active-controls-height';
+/** Our copy of that distance, added to our own bottom offset */
+const DISPLACE_VAR = '--nrk-ov-displace';
 /** NRK anchors its line at 95% of the player height */
 const BOTTOM_MARGIN = '5%';
 const GAP_PX = 4;
@@ -21,12 +27,17 @@ const GAP_PX = 4;
  * slipped into NRK's subtitle markup: that markup is a Lit template, which can
  * re-render over foreign nodes. To sit "below" NRK's line we take its place at the
  * bottom and lift NRK's subtitle layer by our height with a transform on its host.
+ *
+ * When the controls show, NRK moves its subtitle layer up to make room; we watch
+ * for that and move with it, by the same distance.
  */
 export class OverlayRenderer {
   private element: HTMLDivElement | null = null;
   private lifted: HTMLElement | null = null;
   private lines: string[] = [];
   private notice: OverlayNotice | null = null;
+  private watchedLayer: HTMLElement | null = null;
+  private layerObserver = new MutationObserver(() => this.followControls());
 
   constructor(private settings: ExtensionSettings) {}
 
@@ -50,6 +61,8 @@ export class OverlayRenderer {
     this.element?.remove();
     this.element = null;
     this.unlift();
+    this.layerObserver.disconnect();
+    this.watchedLayer = null;
   }
 
   private render(): void {
@@ -99,8 +112,10 @@ export class OverlayRenderer {
     const nativeLayer = player.querySelector(NRK_SUBTITLES) as HTMLElement | null;
     const nativeVisible = this.settings.showOriginal && nativeLayer && !document.documentElement.classList.contains('nrk-ov-hide-native');
 
+    this.watchLayer(nativeLayer);
+    this.followControls();
     element.style.top = '';
-    element.style.bottom = BOTTOM_MARGIN;
+    element.style.bottom = withDisplacement(BOTTOM_MARGIN);
 
     if (!nativeVisible || !nativeLayer) {
       this.unlift();
@@ -111,9 +126,10 @@ export class OverlayRenderer {
       this.unlift();
       const line = nativeLayer.querySelector(NRK_LINE);
       if (line) {
-        const playerRect = player.getBoundingClientRect();
+        // Measured from NRK's layer, which carries its own displacement
+        const layerRect = nativeLayer.getBoundingClientRect();
         const lineRect = line.getBoundingClientRect();
-        element.style.bottom = `${playerRect.bottom - lineRect.top + GAP_PX}px`;
+        element.style.bottom = withDisplacement(`${layerRect.bottom - lineRect.top + GAP_PX}px`);
       }
       return;
     }
@@ -121,6 +137,29 @@ export class OverlayRenderer {
     // Below: we take the bottom slot and push NRK's line up by our height
     this.lifted = nativeLayer;
     nativeLayer.style.transform = `translateY(-${element.offsetHeight + GAP_PX}px)`;
+  }
+
+  /** NRK can replace its subtitle layer, e.g. on a new episode */
+  private watchLayer(layer: HTMLElement | null): void {
+    if (layer === this.watchedLayer) {
+      return;
+    }
+    this.layerObserver.disconnect();
+    this.watchedLayer = layer;
+    if (layer) {
+      this.layerObserver.observe(layer, { attributes: true, attributeFilter: ['class'] });
+    }
+  }
+
+  private followControls(): void {
+    const layer = this.watchedLayer;
+    if (!this.element || !layer) {
+      return;
+    }
+    const distance = layer.classList.contains(NRK_DISPLACED)
+      ? window.getComputedStyle(layer).getPropertyValue(NRK_CONTROLS_HEIGHT).trim()
+      : '';
+    this.element.style.setProperty(DISPLACE_VAR, distance || '0px');
   }
 
   private unlift(): void {
@@ -145,6 +184,10 @@ export class OverlayRenderer {
     }
     return `${(nrkSize * this.settings.fontSizeScale).toFixed(2)}px`;
   }
+}
+
+function withDisplacement(offset: string): string {
+  return `calc(${offset} + var(${DISPLACE_VAR}, 0px))`;
 }
 
 /** Show or hide NRK's own subtitle rendering. Captions keep flowing either way. */

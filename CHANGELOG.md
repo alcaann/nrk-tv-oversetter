@@ -19,6 +19,7 @@
 
 ### Fixed
 
+- The translation now moves up with NRK's subtitle when the player controls appear, instead of staying behind them.
 - A single click could start two model downloads; the second one failing tore down the first, so the download appeared to restart at 100%.
 - Settings changes no longer rebuild everything, and the options page no longer overwrites settings it does not show.
 

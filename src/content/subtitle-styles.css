@@ -17,6 +17,8 @@
   background: rgba(0, 0, 0, 0.6);
   border-radius: 4px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  /* NRK's own easing when its subtitles make room for the controls */
+  transition: bottom 0.15s cubic-bezier(0.12, 0, 0, 1);
 }
 
 /* A status line in the translation's place, e.g. while the model downloads */
