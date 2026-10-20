@@ -38,3 +38,6 @@ Screenshot_*.png
 
 # Test harness browser profile
 .harness/
+
+# Store upload packages
+release/

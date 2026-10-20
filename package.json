@@ -1,6 +1,6 @@
 {
   "name": "nrk-tv-oversetter",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Browser extension that translates Norwegian subtitles on NRK TV in real-time using the browser's built-in on-device Translator API",
   "repository": {
     "type": "git",
@@ -28,7 +28,8 @@
     "watch": "tsc --watch",
     "clean": "rimraf dist",
     "harness:audit": "npm run build && node tools/harness/audit.cjs",
-    "harness:scenarios": "npm run build && node tools/harness/scenarios.cjs"
+    "harness:scenarios": "npm run build && node tools/harness/scenarios.cjs",
+    "package": "npm run clean && npm run build && node scripts/package-extension.js"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.268",
