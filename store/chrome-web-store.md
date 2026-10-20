@@ -6,7 +6,8 @@ Paste each section into the corresponding field. Written for **v0.3.0**.
 
 ## Short description
 
-> Max 132 characters.
+> Max 132 characters. The dashboard does not let you edit this: it shows the
+> `description` from `manifest.json`, so change it there and re-upload the package.
 
 ```
 Watch NRK TV in Norwegian with the translation one glance away: dual subtitles or a learning panel. On-device, works offline.
