@@ -34,9 +34,14 @@ region where NRK's content plays (the default episode is open to all of Norway).
   `first-run` (a real fresh install: off, with the mode card on the player).
   Scenarios run in learning mode unless they set their own settings.
 
-Headless Edge downloads the model but never finishes installing it, and after a
-restart refuses with `NotSupportedError`, so the Edge download path cannot be
-verified end to end here. Use it for everything else.
+**translator-probe.cjs** calls the browser's Translator API directly, with no
+extension code involved: `BROWSER=microsoft-edge-dev node tools/harness/translator-probe.cjs no:en,de:en`.
+
+On Linux, Edge 148 stable and Edge 157 dev both download a model to 100% and then
+fail `Translator.create()` with `NotSupportedError` for every pair (German to
+English included); Microsoft's own Translator playground fails the same way on a
+real, non-headless Edge. Chrome works. So Edge cannot verify the translation path
+here; use it for everything else.
 
 The user activation Chrome needs to download a model is granted by clicking the
 panel footer, which does nothing. Do not click page corners: some NRK pages have
