@@ -1,6 +1,6 @@
 # Chrome Web Store listing
 
-Paste each section into the corresponding field. Written for **v0.2.0**.
+Paste each section into the corresponding field. Written for **v0.3.0**.
 
 ---
 
@@ -9,7 +9,7 @@ Paste each section into the corresponding field. Written for **v0.2.0**.
 > Max 132 characters.
 
 ```
-Translate Norwegian subtitles on NRK TV into your language, in real-time and on your device. Works offline.
+Watch NRK TV in Norwegian with the translation one glance away: dual subtitles or a learning panel. On-device, works offline.
 ```
 
 ---
@@ -17,54 +17,68 @@ Translate Norwegian subtitles on NRK TV into your language, in real-time and on 
 ## Detailed description
 
 ```
-This extension translates Norwegian subtitles on NRK TV (tv.nrk.no) into your preferred language in real-time while you watch.
+Watch NRK TV (tv.nrk.no) in Norwegian, with the translation one glance away.
 
-Translation runs entirely on your device using your browser's built-in translation model. Nothing you watch is sent anywhere.
+Translation runs on your own computer, using the model built into Chrome. Nothing you watch is sent anywhere.
 
-KEY FEATURES
+TWO WAYS TO WATCH
 
-- Real-time subtitle translation as you watch
-- Every language your browser supports, including Arabic, Hebrew, Hindi, Thai, Turkish, Ukrainian, Vietnamese, Korean, Tamil, Telugu and many more. The list is read from your browser, so it is always accurate for your setup
-- Fully on-device: no accounts, no API keys, no subtitle text leaving your computer
-- Works offline once the language model has downloaded
-- Show the translation alongside the Norwegian original, or hide the original and show only the translation
-- Translation size that scales with NRK's own subtitles, so it stays in proportion in fullscreen and on small windows, or a fixed size if you prefer
-- Choose whether translations appear above or below the original
-- Learning panel: a running history of the Norwegian lines beside the video, with each translation hidden until you hover it, and the video pausing while you read
-- Choose the mode right in NRK's own subtitle menu, even in fullscreen
+Dual subtitles: the translation appears under NRK's Norwegian subtitle, right on the video. Works in fullscreen.
 
-HOW TO USE
+Learning panel: every Norwegian line so far, in a panel beside the video. The translation stays hidden until you hover a line, and the video pauses while you read. Move away and it plays on. Click a line's time to hear it again.
+
+GETTING STARTED
 
 1. Install the extension
-2. Visit NRK TV (tv.nrk.no) and play a video with Norwegian subtitles enabled
-3. Click the extension icon and choose the language you want
-4. Translated subtitles appear below the Norwegian text in yellow
+2. Open any program on tv.nrk.no
+3. The first time, a card on the player asks how you would like the subtitles. Pick Dual subtitles or Learning panel
+4. That's it. Choosing a mode also downloads the translation model, once
 
-The first time you use a language, your browser downloads that translation model. This happens automatically and the popup shows live progress. Chrome requires a click on the page before it will start a download, so if nothing happens, pause and play the video again.
+Change mode at any time from NRK's own subtitle menu (under "Oversetter"), or from the extension's toolbar icon.
 
-CUSTOMISATION
+FEATURES
 
-Right-click the extension icon and choose "Options" to set the translation size, choose where translations appear, and hide the Norwegian original if you only want the translation.
+- Dual subtitles on the video, or the learning panel with hover-to-reveal and automatic pause
+- Choose the mode in NRK's own subtitle menu, even in fullscreen
+- Each line is translated ahead of time, so it appears together with the Norwegian
+- Works even with NRK's subtitles hidden or switched off
+- Every language your browser can translate into (around 40 in Chrome), including Arabic, Hindi, Korean, Turkish, Ukrainian and Vietnamese
+- Fully on-device: no account, no API key, no subtitle text leaving your computer
+- Works offline once the model has downloaded
+- Translation size follows NRK's own subtitles in fullscreen and small windows, or a fixed size
 
 REQUIREMENTS
 
-- Google Chrome, or Microsoft Edge 148 or later
-- An internet connection for the one-time model download; offline afterwards
-- Norwegian subtitles enabled on the NRK TV video
+- Google Chrome on desktop
+- An internet connection for the one-time model download
 
-Which languages are available depends on your browser.
+Microsoft Edge: Edge's built-in translator does not currently work on Linux (a Microsoft bug, reported). Windows and macOS have not been tested yet.
 
 PRIVACY
 
-No subtitle text, browsing history, or personal data is collected or transmitted. Translation happens locally in your browser.
+No subtitle text, browsing history or personal data is collected or transmitted. Translation happens locally in your browser.
 
 SUPPORT
 
-Please feel free to report bugs and request languages on GitHub:
+Report bugs and request languages on GitHub:
 https://github.com/alcaann/nrk-tv-oversetter/issues
 
 This extension is not affiliated with NRK.
 ```
+
+---
+
+## Images
+
+All in the repo, regenerated by `tools/media/` (see [README](README.md)).
+
+| Field | File | Size |
+| --- | --- | --- |
+| Screenshots (up to 5) | `docs/tutorial/01-choose-mode.png`, `02-dual-subtitles.png`, `03-nrk-menu.png`, `04-learning-panel.png`, `05-hover-to-reveal.png` | 1280x800 |
+| Small promo tile (required) | `store/assets/promo-small-440x280.png` | 440x280 |
+| Marquee promo tile (optional) | `store/assets/promo-marquee-1400x560.png` | 1400x560 |
+| Store icon | `icons/icon128.png` | 128x128 |
+| Promo video (optional) | `docs/tutorial/tutorial.mp4`, once uploaded to YouTube | YouTube link |
 
 ---
 
@@ -75,16 +89,26 @@ This extension is not affiliated with NRK.
 | Category | Accessibility (alt: Productivity) |
 | Language | English |
 | Support URL | `https://github.com/alcaann/nrk-tv-oversetter/issues` |
-| Official website | *not set* — requires domain verification |
+| Official website | *not set*, requires domain verification |
 | Privacy policy | `https://github.com/alcaann/nrk-tv-oversetter/blob/main/PRIVACY.md` |
 
 ## Permission justifications
 
 | Permission | Justification |
 | --- | --- |
-| `storage` | Stores the user's own settings: target language, translation size, position, and whether to show the original subtitle. |
-| `*://*.nrk.no/*` | The extension only reads subtitles and inserts translations on NRK TV pages. It is not active on any other site. |
+| `storage` | Stores the user's own settings: mode, target language, translation size and position, and the learning panel's options. |
+| `*://*.nrk.no/*` | The extension only reads subtitles and shows translations on NRK TV pages. It is not active on any other site. |
 
 **Remote code:** none. All code is bundled in the package.
 
 **Data collection:** none.
+
+## What's new in 0.3.0 (for the update note)
+
+```
+- New learning panel: the Norwegian lines beside the video, translation on hover, video pauses while you read
+- Choose the mode in NRK's own subtitle menu, even in fullscreen
+- Subtitles are read from NRK's subtitle track: translations are ready when the line is spoken, and work with NRK's subtitles hidden or off
+- Clearer model download, with a Download button and progress
+- Redesigned popup and settings
+```

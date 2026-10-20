@@ -1,5 +1,10 @@
 # Microsoft Edge Add-ons listing
 
+> **On hold.** Edge's built-in translator does not work on Linux (wrong language
+> packs, crashing translation service: [MSEdgeExplainers#1424](https://github.com/MicrosoftEdge/MSEdgeExplainers/issues/1424)),
+> and Windows/macOS are untested. Before submitting, verify on Windows, then bring
+> this copy in line with [chrome-web-store.md](chrome-web-store.md) (v0.3.0).
+
 Paste each section into the corresponding field. Written for **v0.2.0**.
 
 Largely the same as the [Chrome listing](chrome-web-store.md), with the language
